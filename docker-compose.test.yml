@@ -1,0 +1,33 @@
+# docker-compose.test.yml
+version: '3.8'
+
+services:
+  mongodb-test:
+    image: mongo:latest
+    container_name: wedgram-mongodb-test
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_DATABASE: testdb
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+  backend-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: wedgram-backend-test
+    depends_on:
+      mongodb-test:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=test
+      - MONGO_URI=mongodb://mongodb-test:27017/testdb
+      - JWT_SECRET=test-jwt-secret
+      - JWT_EXPIRES_IN=1h
+    ports:
+      - "5001:5000"
+    command: ["npm", "run", "test"]
