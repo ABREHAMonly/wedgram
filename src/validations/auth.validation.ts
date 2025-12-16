@@ -40,7 +40,7 @@ export const registerSchema = Joi.object({
     .min(3)
     .max(500)
     .optional(),
-}).custom((value, _helpers) => {
+}).custom((value) => { // Remove the unused parameter
   // Remove confirmPassword before sending to controller
   delete value.confirmPassword;
   return value;

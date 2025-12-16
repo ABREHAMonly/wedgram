@@ -1,7 +1,7 @@
 // backend/src/utils/apiResponse.ts
 import { Response } from 'express';
 
-export interface APIResponse<T = unknown> { // Change any to unknown
+export interface APIResponse<T = unknown> {
   success: boolean;
   message: string;
   data?: T;
@@ -46,7 +46,7 @@ export class ResponseHandler {
     return this.success(res, data, message, 201);
   }
   
- static error(
+  static error(
     res: Response,
     message = 'Internal server error',
     statusCode = 500,
@@ -67,7 +67,7 @@ export class ResponseHandler {
   
   static validationError(
     res: Response,
-    errors: any[],
+    errors: Array<{field: string; message: string}>,
     message = 'Validation failed'
   ): Response {
     return this.error(

@@ -84,7 +84,8 @@ userSchema.pre('save', async function(next) {
 });
 
 userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
-  return bcrypt.compare(candidatePassword, this.password);
+  const result = await bcrypt.compare(candidatePassword, this.password);
+  return result;
 };
 
 // Create a method to get user without password
