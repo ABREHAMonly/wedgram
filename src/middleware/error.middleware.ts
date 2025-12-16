@@ -8,7 +8,7 @@ export const errorHandler = (
   err: Error | APIError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction // Add underscore to indicate intentional unused parameter
 ) => {
   logger.error({
     message: err.message,

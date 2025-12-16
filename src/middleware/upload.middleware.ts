@@ -3,6 +3,7 @@ import { Request } from 'express';
 
 const storage = multer.memoryStorage();
 
+// Fix: Import Express types properly or use global namespace
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
   

@@ -14,11 +14,8 @@ export const verifyToken = (token: string): JwtPayload => {
     throw new Error('JWT secret not configured');
   }
   
-  try {
-    return jwt.verify(token, secret) as JwtPayload;
-  } catch (error) {
-    throw error;
-  }
+  // Remove unnecessary try/catch
+  return jwt.verify(token, secret) as JwtPayload;
 };
 
 export const signToken = (userId: string, role: 'admin' | 'inviter'): string => {

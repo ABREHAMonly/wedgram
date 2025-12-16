@@ -1,16 +1,22 @@
-// First, update the Express type declaration
 // backend/src/types/express/index.d.ts
-import { IUser } from '../../models/User.model';
-
-// Create a type without password for request user
-export type IUserWithoutPassword = Omit<IUser, 'password'> & {
-  _id: any;
-};
+// For the alternative approach
 
 declare global {
   namespace Express {
     interface Request {
-      user?: IUserWithoutPassword;
+      user?: {
+        _id: string;
+        name: string;
+        email: string;
+        role: 'admin' | 'inviter';
+        isActive: boolean;
+        phone?: string;
+        weddingDate?: Date;
+        partnerName?: string;
+        weddingLocation?: string;
+        createdAt: Date;
+        updatedAt: Date;
+      };
     }
   }
 }

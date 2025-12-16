@@ -1,8 +1,26 @@
 // backend/src/middleware/auth.middleware.ts
+// backend/src/middleware/auth.middleware.ts
 import { Request, Response, NextFunction } from 'express';
-import User from '../models/User.model';
+import User, { IUser } from '../models/User.model';
 import { ResponseHandler } from '../utils/apiResponse';
 import { verifyToken, signToken } from '../utils/jwt';
+import logger from '../utils/logger';
+import { Types } from 'mongoose';
+
+// Define a safe type for the user object we'll put on req
+interface RequestUser {
+  _id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'inviter';
+  isActive: boolean;
+  phone?: string;
+  weddingDate?: Date;
+  partnerName?: string;
+  weddingLocation?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export const protect = async (
   req: Request,
@@ -32,16 +50,35 @@ export const protect = async (
       return;
     }
 
-    // Convert to plain object (toJSON will remove password)
-    req.user = user.toJSON() as any;
+    // Extract only the fields we need and ensure _id is a string
+    const userObject: RequestUser = {
+      _id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      phone: user.phone,
+      weddingDate: user.weddingDate,
+      partnerName: user.partnerName,
+      weddingLocation: user.weddingLocation,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+
+    req.user = userObject;
     next();
-  } catch (error: any) {
-    if (error.name === 'TokenExpiredError') {
-      ResponseHandler.unauthorized(res, 'Token expired');
-    } else if (error.name === 'JsonWebTokenError') {
-      ResponseHandler.unauthorized(res, 'Invalid token');
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      if (error.name === 'TokenExpiredError') {
+        ResponseHandler.unauthorized(res, 'Token expired');
+      } else if (error.name === 'JsonWebTokenError') {
+        ResponseHandler.unauthorized(res, 'Invalid token');
+      } else {
+        logger.error('Auth middleware error:', error);
+        ResponseHandler.unauthorized(res, 'Authentication failed');
+      }
     } else {
-      console.error('Auth middleware error:', error);
+      logger.error('Auth middleware unknown error:', error);
       ResponseHandler.unauthorized(res, 'Authentication failed');
     }
   }

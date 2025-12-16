@@ -78,9 +78,13 @@ export const getGuests = async (req: Request, res: Response): Promise<void> => {
     const { page = 1, limit = 20, status } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const query: any = { inviter: user._id };
+    // Use proper type for query
+    const query: { inviter: any; rsvpStatus?: string } = { 
+      inviter: user._id 
+    };
+    
     if (status) {
-      query.rsvpStatus = status;
+      query.rsvpStatus = status as string;
     }
 
     const guests = await Guest.find(query)
@@ -163,7 +167,8 @@ export const sendInvitations = async (req: Request, res: Response): Promise<void
   }
 };
 
-async function sendInvitationToGuest(guest: IGuest, wedding: IWedding): Promise<boolean> {
+async function sendInvitationToGuest(guest: IGuest, _wedding: IWedding): Promise<boolean> {
+  // Add underscore to indicate intentionally unused parameter
   const inviteLink = generateInviteLink(guest.invitationToken);
 
   try {

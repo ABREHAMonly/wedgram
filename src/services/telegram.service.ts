@@ -1,8 +1,6 @@
 // backend/src/services/telegram.service.ts
 import TelegramBot from 'node-telegram-bot-api';
 import logger from '../utils/logger';
-import { generateInviteLink } from '../utils/helpers';
-
 class TelegramService {
   private bot: TelegramBot | null = null;
   private isActive = false;

@@ -1,3 +1,4 @@
+// eslint.config.cjs
 const js = require('@eslint/js');
 const tseslint = require('@typescript-eslint/eslint-plugin');
 const tsParser = require('@typescript-eslint/parser');
@@ -6,13 +7,15 @@ const globals = require('globals');
 module.exports = [
   js.configs.recommended,
   {
+    // TypeScript files
     files: ['src/**/*.ts'],
     languageOptions: {
       parser: tsParser,
       ecmaVersion: 2020,
       sourceType: 'module',
       globals: {
-        ...globals.node
+        ...globals.node,
+        Express: 'readonly'
       }
     },
     plugins: {
@@ -20,8 +23,15 @@ module.exports = [
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['warn', { 'argsIgnorePattern': '^_', 'varsIgnorePattern': '^_' }],
-      'no-console': 'warn'
+      '@typescript-eslint/no-unused-vars': [
+        'warn', 
+        { 
+          'argsIgnorePattern': '^_',
+          'varsIgnorePattern': '^_',
+          'caughtErrorsIgnorePattern': '^_' 
+        }
+      ],
+      'no-console': ['warn', { allow: ['warn', 'error'] }]
     }
   },
   {
@@ -39,6 +49,35 @@ module.exports = [
       'no-console': 'off',
       'eqeqeq': 'off',
       'curly': 'off'
+    }
+  },
+  {
+    // CommonJS files (like config files)
+    files: ['**/*.js', '**/*.cjs'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'script',
+      globals: {
+        ...globals.node,
+        module: 'readonly',
+        require: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly'
+      }
+    },
+    rules: {
+      '@typescript-eslint/no-var-requires': 'off',
+      'no-undef': 'off',
+      'no-console': 'off'
+    }
+  },
+  {
+    // Configuration files
+    files: ['*.config.js', '*.config.cjs'],
+    rules: {
+      '@typescript-eslint/no-var-requires': 'off',
+      'no-undef': 'off',
+      'no-console': 'off'
     }
   },
   {

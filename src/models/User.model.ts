@@ -80,6 +80,7 @@ userSchema.pre('save', async function(next) {
 });
 
 userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
+  // The parameter 'candidatePassword' is actually used below
   return bcrypt.compare(candidatePassword, this.password);
 };
 
