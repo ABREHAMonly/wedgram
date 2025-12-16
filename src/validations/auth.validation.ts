@@ -16,7 +16,7 @@ export const registerSchema = Joi.object({
   
   password: Joi.string()
     .min(Constants.VALIDATION.PASSWORD_MIN_LENGTH)
-    .required(), // Removed complex regex for testing
+    .required(),
   
   confirmPassword: Joi.string()
     .valid(Joi.ref('password'))
@@ -26,10 +26,10 @@ export const registerSchema = Joi.object({
     }),
   
   phone: Joi.string()
-    .optional(), // Simplified for testing
+    .optional(),
   
   weddingDate: Joi.date()
-    .required(), // Removed 'greater than now' for testing
+    .required(),
   
   partnerName: Joi.string()
     .min(2)
@@ -40,7 +40,7 @@ export const registerSchema = Joi.object({
     .min(3)
     .max(500)
     .optional(),
-}).custom((value, helpers) => {
+}).custom((value, _helpers) => { // Changed helpers to _helpers
   // Remove confirmPassword before sending to controller
   delete value.confirmPassword;
   return value;

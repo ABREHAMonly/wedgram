@@ -22,17 +22,29 @@ module.exports = {
       'warn',
       { 
         'argsIgnorePattern': '^_',
-        'varsIgnorePattern': '^_' 
+        'varsIgnorePattern': '^_',
+        'caughtErrorsIgnorePattern': '^_'
       }
     ],
     'no-undef': 'off',
-    'no-console': ['warn', { allow: ['warn', 'error'] }]
+    'no-console': ['warn', { allow: ['warn', 'error'] }],
+    '@typescript-eslint/ban-ts-comment': 'warn'
   },
   overrides: [
     {
       files: ['*.js', '*.cjs'],
       rules: {
-        '@typescript-eslint/explicit-module-boundary-types': 'off'
+        '@typescript-eslint/explicit-module-boundary-types': 'off',
+        '@typescript-eslint/no-var-requires': 'off'
+      }
+    },
+    {
+      files: ['**/__tests__/**', '**/*.test.ts', '**/*.spec.ts'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-unused-vars': 'off',
+        'no-console': 'off',
+        '@typescript-eslint/ban-ts-comment': 'off'
       }
     }
   ]

@@ -74,21 +74,24 @@ userSchema.pre('save', async function(next) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     next();
-  } catch (error: any) {
-    next(error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      next(error);
+    } else {
+      next(new Error('Unknown error occurred while hashing password'));
+    }
   }
 });
 
 userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
-  // The parameter 'candidatePassword' is actually used below
   return bcrypt.compare(candidatePassword, this.password);
 };
 
 // Create a method to get user without password
 userSchema.methods.toJSON = function() {
-  const userObject = this.toObject();
-  delete (userObject as any).password;
-  delete (userObject as any).refreshToken;
+  const userObject = this.toObject() as Record<string, unknown>;
+  delete userObject.password;
+  delete userObject.refreshToken;
   return userObject;
 };
 

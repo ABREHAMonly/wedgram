@@ -4,11 +4,25 @@ import { APIError } from '../utils/apiError';
 import logger from '../utils/logger';
 import { ResponseHandler } from '../utils/apiResponse';
 
+interface MongoValidationError extends Error {
+  errors?: Record<string, { path: string; message: string }>;
+}
+
+interface MongoDuplicateError extends Error {
+  code?: number;
+  keyPattern?: Record<string, unknown>;
+}
+
+interface MongoCastError extends Error {
+  path?: string;
+  value?: unknown;
+}
+
 export const errorHandler = (
   err: Error | APIError,
   req: Request,
   res: Response,
-  _next: NextFunction // Add underscore to indicate intentional unused parameter
+  _next: NextFunction // Add underscore to indicate intentionally unused
 ) => {
   logger.error({
     message: err.message,
@@ -16,7 +30,7 @@ export const errorHandler = (
     path: req.path,
     method: req.method,
     ip: req.ip,
-    userId: (req as any).user?._id,
+    userId: (req as Request & { user?: { _id: string } }).user?._id,
   });
   
   if (err instanceof APIError) {
@@ -29,16 +43,18 @@ export const errorHandler = (
   }
   
   if (err.name === 'ValidationError') {
-    const errors = Object.values((err as any).errors).map((error: any) => ({
+    const mongoError = err as MongoValidationError;
+    const errors = mongoError.errors ? Object.values(mongoError.errors).map((error: { path: string; message: string }) => ({
       field: error.path,
       message: error.message,
-    }));
+    })) : [];
     
     return ResponseHandler.validationError(res, errors);
   }
   
-  if ((err as any).code === 11000) {
-    const field = Object.keys((err as any).keyPattern)[0];
+  const mongoDuplicateError = err as MongoDuplicateError;
+  if (mongoDuplicateError.code === 11000) {
+    const field = mongoDuplicateError.keyPattern ? Object.keys(mongoDuplicateError.keyPattern)[0] : 'unknown';
     return ResponseHandler.conflict(res, `${field} already exists`);
   }
   
@@ -50,8 +66,9 @@ export const errorHandler = (
     return ResponseHandler.unauthorized(res, 'Token expired');
   }
   
+  const mongoCastError = err as MongoCastError;
   if (err.name === 'CastError') {
-    return ResponseHandler.notFound(res, 'Invalid resource ID');
+    return ResponseHandler.notFound(res, `Invalid ${mongoCastError.path || 'resource'} ID`);
   }
   
   const message = process.env.NODE_ENV === 'production'

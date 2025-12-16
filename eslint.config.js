@@ -1,4 +1,4 @@
-// eslint.config.cjs
+//eslint.config.js
 const js = require('@eslint/js');
 const tseslint = require('@typescript-eslint/eslint-plugin');
 const tsParser = require('@typescript-eslint/parser');
@@ -31,7 +31,8 @@ module.exports = [
           'caughtErrorsIgnorePattern': '^_' 
         }
       ],
-      'no-console': ['warn', { allow: ['warn', 'error'] }]
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      '@typescript-eslint/ban-ts-comment': 'warn'
     }
   },
   {
@@ -48,7 +49,8 @@ module.exports = [
       '@typescript-eslint/no-unused-vars': 'off',
       'no-console': 'off',
       'eqeqeq': 'off',
-      'curly': 'off'
+      'curly': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off'
     }
   },
   {

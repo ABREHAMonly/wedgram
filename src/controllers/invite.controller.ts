@@ -4,9 +4,10 @@ import Guest from '../models/Guest.model';
 import Wedding from '../models/Wedding.model';
 import { ResponseHandler } from '../utils/apiResponse';
 import { generateInviteToken, generateInviteLink } from '../utils/helpers';
-import logger from '../utils/logger'; // Add this import
-import { IGuest } from '../models/Guest.model'; // Add import for type
-import { IWedding } from '../models/Wedding.model'; // Add import for type
+import logger from '../utils/logger';
+import { IGuest } from '../models/Guest.model';
+import { IWedding } from '../models/Wedding.model';
+import { Types } from 'mongoose';
 
 export const createInvites = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -31,7 +32,7 @@ export const createInvites = async (req: Request, res: Response): Promise<void> 
       try {
         const invitationToken = generateInviteToken();
         const guest = await Guest.create({
-          inviter: user._id,
+          inviter: new Types.ObjectId(user._id),
           ...guestData,
           invitationToken,
         });
@@ -61,7 +62,7 @@ export const createInvites = async (req: Request, res: Response): Promise<void> 
       results,
       total: createdGuests.length,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Create invites error:', error);
     ResponseHandler.error(res, 'Failed to create invitations');
   }
@@ -78,9 +79,8 @@ export const getGuests = async (req: Request, res: Response): Promise<void> => {
     const { page = 1, limit = 20, status } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    // Use proper type for query
-    const query: { inviter: any; rsvpStatus?: string } = { 
-      inviter: user._id 
+    const query: { inviter: Types.ObjectId; rsvpStatus?: string } = { 
+      inviter: new Types.ObjectId(user._id) 
     };
     
     if (status) {
@@ -100,7 +100,7 @@ export const getGuests = async (req: Request, res: Response): Promise<void> => {
       total,
       totalPages: Math.ceil(total / Number(limit)),
     });
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Get guests error:', error);
     ResponseHandler.error(res, 'Failed to fetch guests');
   }
@@ -123,8 +123,8 @@ export const sendInvitations = async (req: Request, res: Response): Promise<void
     }
 
     const guests = await Guest.find({
-      _id: { $in: guestIds },
-      inviter: user._id,
+      _id: { $in: guestIds.map((id: string) => new Types.ObjectId(id)) },
+      inviter: new Types.ObjectId(user._id),
     });
 
     const results = [];
@@ -161,14 +161,13 @@ export const sendInvitations = async (req: Request, res: Response): Promise<void
       message: `Invitations sent to ${sentCount}/${guests.length} guests`,
       results,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Send invitations error:', error);
     ResponseHandler.error(res, 'Failed to send invitations');
   }
 };
 
 async function sendInvitationToGuest(guest: IGuest, _wedding: IWedding): Promise<boolean> {
-  // Add underscore to indicate intentionally unused parameter
   const inviteLink = generateInviteLink(guest.invitationToken);
 
   try {
