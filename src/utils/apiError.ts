@@ -2,12 +2,12 @@
 export class APIError extends Error {
   statusCode: number;
   isOperational: boolean;
-  errors?: any[];
+  errors?: Array<{field: string; message: string}>; // Specify type
   
   constructor(
     message: string,
     statusCode: number,
-    errors?: any[],
+    errors?: Array<{field: string; message: string}>, // Specify type
     isOperational = true
   ) {
     super(message);
@@ -20,7 +20,7 @@ export class APIError extends Error {
 }
 
 export class ValidationError extends APIError {
-  constructor(errors: any[]) {
+  constructor(errors: Array<{field: string; message: string}>) { // Specify type
     super('Validation failed', 400, errors);
   }
 }

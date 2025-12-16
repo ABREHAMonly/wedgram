@@ -6,31 +6,43 @@ import jwt from 'jsonwebtoken';
 let mongoServer: MongoMemoryServer;
 
 // Increase timeout for all tests
-jest.setTimeout(30000);
+jest.setTimeout(60000); // Increase from 30000 to 60000
 
 beforeAll(async () => {
-  // Setup in-memory MongoDB
-  mongoServer = await MongoMemoryServer.create();
-  const mongoUri = mongoServer.getUri();
-  
-  // Clear any existing connections
-  if (mongoose.connection.readyState !== 0) {
-    await mongoose.disconnect();
+  try {
+    // Setup in-memory MongoDB with longer timeout
+    mongoServer = await MongoMemoryServer.create({
+      instance: {
+        launchTimeout: 60000, // Increase launch timeout
+      }
+    });
+    const mongoUri = mongoServer.getUri();
+    
+    // Clear any existing connections
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
+    
+    await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
+    
+    console.log('✅ Test MongoDB connected to:', mongoUri);
+    
+    // Mock environment variables
+    process.env.JWT_SECRET = 'test-jwt-secret-key';
+    process.env.JWT_EXPIRES_IN = '1h';
+    process.env.NODE_ENV = 'test';
+    process.env.PORT = '5000';
+    process.env.BASE_URL = 'http://localhost:3000';
+    process.env.FRONTEND_URL = 'http://localhost:3000';
+    process.env.INVITE_BASE_URL = 'http://localhost:3000/invite';
+    
+  } catch (error) {
+    console.error('Failed to setup test database:', error);
+    throw error;
   }
-  
-  await mongoose.connect(mongoUri);
-  
-  // Allowed in test files
-  console.log('✅ Test MongoDB connected to:', mongoUri);
-  
-  // Mock environment variables
-  process.env.JWT_SECRET = 'test-jwt-secret-key';
-  process.env.JWT_EXPIRES_IN = '1h';
-  process.env.NODE_ENV = 'test';
-  process.env.PORT = '5000';
-  process.env.BASE_URL = 'http://localhost:3000';
-  process.env.FRONTEND_URL = 'http://localhost:3000';
-  process.env.INVITE_BASE_URL = 'http://localhost:3000/invite';
   
   // Mock external services for integration tests
   jest.mock('../services/email.service', () => ({

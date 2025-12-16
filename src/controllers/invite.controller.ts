@@ -167,7 +167,7 @@ export const sendInvitations = async (req: Request, res: Response): Promise<void
   }
 };
 
-async function sendInvitationToGuest(guest: IGuest, _wedding: IWedding): Promise<boolean> {
+async function sendInvitationToGuest(guest: IGuest, wedding: IWedding): Promise<boolean> {
   const inviteLink = generateInviteLink(guest.invitationToken);
 
   try {

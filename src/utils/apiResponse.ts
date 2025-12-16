@@ -1,7 +1,7 @@
 // backend/src/utils/apiResponse.ts
 import { Response } from 'express';
 
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> { // Change any to unknown
   success: boolean;
   message: string;
   data?: T;
@@ -20,7 +20,12 @@ export class ResponseHandler {
     data?: T,
     message = 'Success',
     statusCode = 200,
-    meta?: any
+    meta?: { // Specify type instead of any
+      page?: number;
+      limit?: number;
+      total?: number;
+      totalPages?: number;
+    }
   ): Response {
     const response: APIResponse<T> = {
       success: true,
@@ -41,13 +46,13 @@ export class ResponseHandler {
     return this.success(res, data, message, 201);
   }
   
-  static error(
+ static error(
     res: Response,
     message = 'Internal server error',
     statusCode = 500,
-    errors?: any[]
+    errors?: Array<{field: string; message: string}> // Specify type
   ): Response {
-    const response: APIResponse = {
+    const response: APIResponse<{errors?: Array<{field: string; message: string}>}> = {
       success: false,
       message,
       timestamp: new Date().toISOString(),

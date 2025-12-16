@@ -4,6 +4,7 @@ dotenv.config();
 
 import app from './app';
 import telegramService from './services/telegram.service';
+import logger from './utils/logger';
 
 const PORT = process.env.PORT || 5000;
 
@@ -13,16 +14,10 @@ const startServer = async () => {
     await telegramService.initialize();
 
     const server = app.listen(PORT, () => {
-      console.log(`
-🚀 WedGram Backend Server Started!
------------------------------------
-✅ Port: ${PORT}
-✅ Environment: ${process.env.NODE_ENV || 'development'}
-✅ Health Check: http://localhost:${PORT}/health
-✅ API Base: http://localhost:${PORT}/api/v1
------------------------------------
-      `);
-    });
+  logger.info(`🚀 Server running on port ${PORT}`);
+  logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.info(`📝 Log level: ${process.env.LOG_LEVEL || 'info'}`);
+});
 
     // Graceful shutdown
     const gracefulShutdown = async () => {

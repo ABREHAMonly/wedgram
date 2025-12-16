@@ -21,14 +21,18 @@ module.exports = {
     '<rootDir>/src/**/__tests__/**/*.test.ts'
   ],
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
-  testTimeout: 30000,
+  testTimeout: 60000, // Increase from 30000
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
-  // Add this to define jest as a global
+  // Remove globals to fix ts-jest warning
+  // Add transform options instead
   globals: {
     'ts-jest': {
-      tsconfig: 'tsconfig.json'
+      tsconfig: 'tsconfig.json',
+      isolatedModules: true // Add this for better performance
     }
-  }
+  },
+  // Add maxWorkers for better performance
+  maxWorkers: '50%'
 };

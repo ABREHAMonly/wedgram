@@ -14,7 +14,6 @@ export const verifyToken = (token: string): JwtPayload => {
     throw new Error('JWT secret not configured');
   }
   
-  // Remove unnecessary try/catch
   return jwt.verify(token, secret) as JwtPayload;
 };
 
@@ -28,6 +27,6 @@ export const signToken = (userId: string, role: 'admin' | 'inviter'): string => 
   
   const payload = { userId, role };
   
-  // Fix: Use type assertion for expiresIn
-  return jwt.sign(payload, secret, { expiresIn: expiresIn as any });
+  // Fix: Use type assertion for SignOptions
+  return jwt.sign(payload, secret, { expiresIn } as jwt.SignOptions);
 };

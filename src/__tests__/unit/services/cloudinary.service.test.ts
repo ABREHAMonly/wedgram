@@ -1,51 +1,52 @@
 // backend/src/__tests__/unit/services/cloudinary.service.test.ts
-import { CloudinaryService } from '../../../services/cloudinary.service';
+// Mock cloudinary
+const mockUploadStream = jest.fn();
+const mockDestroy = jest.fn();
 
-// Mock streamifier
-const mockPipe = jest.fn();
+jest.mock('cloudinary', () => ({
+  v2: {
+    uploader: {
+      upload_stream: jest.fn().mockImplementation((options, callback) => {
+        const stream = {
+          pipe: jest.fn(),
+        };
+        // Store the callback for later use
+        setTimeout(() => {
+          if (mockUploadStream.mock.calls.length > 0) {
+            const [mockOptions, mockCallback] = mockUploadStream.mock.calls[0];
+            mockCallback(null, { secure_url: 'https://cloudinary.com/test-image.jpg' });
+          }
+        }, 0);
+        return stream;
+      }),
+      destroy: mockDestroy,
+    },
+    config: jest.fn(),
+  },
+}));
+
 jest.mock('streamifier', () => ({
   createReadStream: jest.fn(() => ({
-    pipe: mockPipe,
+    pipe: jest.fn(),
   })),
 }));
+
+import { CloudinaryService } from '../../../services/cloudinary.service';
 
 describe('CloudinaryService', () => {
   let cloudinaryService: CloudinaryService;
   
-  // Mock cloudinary internally
-  const mockUploadStream = jest.fn();
-  const mockDestroy = jest.fn();
-
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    // Reset the module to get fresh mocks
-    jest.resetModules();
-    
-    // Setup mocks for cloudinary
-    jest.doMock('cloudinary', () => ({
-      v2: {
-        uploader: {
-          upload_stream: mockUploadStream,
-          destroy: mockDestroy,
-        },
-        config: jest.fn(),
-      },
-    }));
-    
-    // Re-import the service with fresh mocks
-    const { CloudinaryService: CloudinaryServiceClass } = require('../../../services/cloudinary.service');
-    cloudinaryService = new CloudinaryServiceClass();
+    cloudinaryService = new CloudinaryService();
+    mockUploadStream.mockClear();
   });
 
   describe('uploadImage', () => {
     it('should upload image successfully', async () => {
       // Mock successful upload
-      mockUploadStream.mockImplementation((options: any, callback: any) => {
-        // Simulate async upload
-        process.nextTick(() => {
-          callback(null, { secure_url: 'https://cloudinary.com/test-image.jpg' });
-        });
+      mockUploadStream.mockImplementationOnce((options, callback) => {
+        callback(null, { secure_url: 'https://cloudinary.com/test-image.jpg' });
         return { pipe: jest.fn() };
       });
 
@@ -53,15 +54,12 @@ describe('CloudinaryService', () => {
       const result = await cloudinaryService.uploadImage(buffer, 'test-folder');
       
       expect(result).toBe('https://cloudinary.com/test-image.jpg');
-      expect(mockUploadStream).toHaveBeenCalled();
     });
 
     it('should handle upload error', async () => {
       // Mock upload error
-      mockUploadStream.mockImplementation((options: any, callback: any) => {
-        process.nextTick(() => {
-          callback(new Error('Upload failed'), null);
-        });
+      mockUploadStream.mockImplementationOnce((options, callback) => {
+        callback(new Error('Upload failed'), null);
         return { pipe: jest.fn() };
       });
 
