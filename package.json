@@ -17,7 +17,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
-    "test:ci": "npm run test:all"
+    "test:ci": "npm run test:all",
+    "create-admin": "ts-node src/scripts/create-admin.ts"
   },
   "keywords": [
     "wedding",
