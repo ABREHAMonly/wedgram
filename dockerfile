@@ -45,8 +45,6 @@ RUN npm ci --only=production
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/public ./public
 
-# Copy environment file template (optional)
-COPY .env.example .env.example
 
 # Switch to non-root user
 USER nodejs
