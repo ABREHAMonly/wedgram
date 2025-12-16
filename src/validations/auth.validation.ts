@@ -40,7 +40,8 @@ export const registerSchema = Joi.object({
     .min(3)
     .max(500)
     .optional(),
-}).custom((value, _helpers) => { // Add underscore prefix
+}).custom((value, _helpers) => {
+  // Remove confirmPassword before sending to controller
   delete value.confirmPassword;
   return value;
 });

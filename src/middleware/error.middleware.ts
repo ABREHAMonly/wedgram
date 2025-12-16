@@ -22,7 +22,7 @@ export const errorHandler = (
   err: Error | APIError,
   req: Request,
   res: Response,
-  next: NextFunction // Remove underscore
+  _next: NextFunction // Add underscore
 ) => {
   logger.error({
     message: err.message,

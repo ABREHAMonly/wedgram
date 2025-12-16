@@ -20,7 +20,7 @@ export class ResponseHandler {
     data?: T,
     message = 'Success',
     statusCode = 200,
-    meta?: { // Specify type instead of any
+    meta?: {
       page?: number;
       limit?: number;
       total?: number;
@@ -50,7 +50,7 @@ export class ResponseHandler {
     res: Response,
     message = 'Internal server error',
     statusCode = 500,
-    errors?: Array<{field: string; message: string}> // Specify type
+    errors?: Array<{field: string; message: string}>
   ): Response {
     const response: APIResponse<{errors?: Array<{field: string; message: string}>}> = {
       success: false,

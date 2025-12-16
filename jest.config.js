@@ -6,7 +6,10 @@ module.exports = {
   moduleDirectories: ['node_modules', '<rootDir>/src'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   transform: {
-    '^.+\\.ts$': 'ts-jest'
+    '^.+\\.ts$': ['ts-jest', {
+      tsconfig: 'tsconfig.json',
+      // Remove isolatedModules from here
+    }]
   },
   collectCoverageFrom: [
     'src/**/*.ts',
@@ -21,18 +24,10 @@ module.exports = {
     '<rootDir>/src/**/__tests__/**/*.test.ts'
   ],
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
-  testTimeout: 60000, // Increase from 30000
+  testTimeout: 60000,
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
   // Remove globals to fix ts-jest warning
-  // Add transform options instead
-  globals: {
-    'ts-jest': {
-      tsconfig: 'tsconfig.json',
-      isolatedModules: true // Add this for better performance
-    }
-  },
-  // Add maxWorkers for better performance
   maxWorkers: '50%'
 };

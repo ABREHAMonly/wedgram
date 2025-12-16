@@ -6,19 +6,7 @@ const mockDestroy = jest.fn();
 jest.mock('cloudinary', () => ({
   v2: {
     uploader: {
-      upload_stream: jest.fn().mockImplementation((options, callback) => {
-        const stream = {
-          pipe: jest.fn(),
-        };
-        // Store the callback for later use
-        setTimeout(() => {
-          if (mockUploadStream.mock.calls.length > 0) {
-            const [mockOptions, mockCallback] = mockUploadStream.mock.calls[0];
-            mockCallback(null, { secure_url: 'https://cloudinary.com/test-image.jpg' });
-          }
-        }, 0);
-        return stream;
-      }),
+      upload_stream: mockUploadStream,
       destroy: mockDestroy,
     },
     config: jest.fn(),
@@ -39,13 +27,12 @@ describe('CloudinaryService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     cloudinaryService = new CloudinaryService();
-    mockUploadStream.mockClear();
   });
 
   describe('uploadImage', () => {
     it('should upload image successfully', async () => {
       // Mock successful upload
-      mockUploadStream.mockImplementationOnce((options, callback) => {
+      mockUploadStream.mockImplementationOnce((_options, callback) => {
         callback(null, { secure_url: 'https://cloudinary.com/test-image.jpg' });
         return { pipe: jest.fn() };
       });
@@ -58,7 +45,7 @@ describe('CloudinaryService', () => {
 
     it('should handle upload error', async () => {
       // Mock upload error
-      mockUploadStream.mockImplementationOnce((options, callback) => {
+      mockUploadStream.mockImplementationOnce((_options, callback) => {
         callback(new Error('Upload failed'), null);
         return { pipe: jest.fn() };
       });

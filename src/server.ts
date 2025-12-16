@@ -14,21 +14,21 @@ const startServer = async () => {
     await telegramService.initialize();
 
     const server = app.listen(PORT, () => {
-  logger.info(`🚀 Server running on port ${PORT}`);
-  logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  logger.info(`📝 Log level: ${process.env.LOG_LEVEL || 'info'}`);
-});
+      logger.info(`🚀 Server running on port ${PORT}`);
+      logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`📝 Log level: ${process.env.LOG_LEVEL || 'info'}`);
+    });
 
     // Graceful shutdown
     const gracefulShutdown = async () => {
-      console.log('Shutting down gracefully...');
+      logger.info('Shutting down gracefully...');
       server.close(() => {
-        console.log('HTTP server closed');
+        logger.info('HTTP server closed');
         process.exit(0);
       });
 
       setTimeout(() => {
-        console.error('Forcefully shutting down');
+        logger.error('Forcefully shutting down');
         process.exit(1);
       }, 10000);
     };
@@ -37,7 +37,7 @@ const startServer = async () => {
     process.on('SIGINT', gracefulShutdown);
     
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.error('Failed to start server:', error);
     process.exit(1);
   }
 };

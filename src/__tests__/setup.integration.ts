@@ -87,7 +87,7 @@ beforeEach(async () => {
   for (const key in collections) {
     try {
       await collections[key].deleteMany({});
-    } catch (_) {
+    } catch {
       // Collection might not exist - ignore error
     }
   }
