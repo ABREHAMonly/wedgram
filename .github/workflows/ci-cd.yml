@@ -1,4 +1,4 @@
-#src\.github\workflows\ci-cd.yml
+#.github\workflows\ci-cd.yml
 name: CI/CD Pipeline
 
 on:
@@ -31,8 +31,22 @@ jobs:
     - name: Lint
       run: npm run lint
     
-    - name: Run tests
-      run: npm test
+    - name: Run unit tests
+      run: npm run test:unit
+      env:
+        NODE_ENV: test
+        JWT_SECRET: test-jwt-secret-key-for-github-actions
+        JWT_EXPIRES_IN: '1h'
+    
+    - name: Run integration tests
+      run: npm run test:integration
+      env:
+        NODE_ENV: test
+        JWT_SECRET: test-jwt-secret-key-for-github-actions
+        JWT_EXPIRES_IN: '1h'
+    
+    - name: Run e2e tests
+      run: npm run test:e2e
       env:
         NODE_ENV: test
         JWT_SECRET: test-jwt-secret-key-for-github-actions

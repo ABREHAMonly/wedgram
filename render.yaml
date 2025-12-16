@@ -19,9 +19,9 @@ services:
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: BASE_URL
-        sync: false
+        value: https://wedgram.onrender.com
       - key: FRONTEND_URL
-        sync: false
+        value: https://wedgram.onrender.com
       - key: MONGO_URI
         sync: false
       - key: REDIS_URL
