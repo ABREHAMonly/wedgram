@@ -1,4 +1,6 @@
 // backend/src/__tests__/setup.integration.ts
+/* eslint-disable no-undef */
+// This tells ESLint that jest is a global variable
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 

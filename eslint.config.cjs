@@ -1,7 +1,6 @@
 const js = require('@eslint/js');
 const tseslint = require('@typescript-eslint/eslint-plugin');
 const tsParser = require('@typescript-eslint/parser');
-const jestPlugin = require('eslint-plugin-jest');
 
 module.exports = [
   js.configs.recommended,
@@ -23,14 +22,17 @@ module.exports = [
       'curly': 'error'
     }
   },
-  // Jest configuration
   {
+    // Test files configuration
     files: ['**/__tests__/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
-    ...jestPlugin.configs['flat/recommended'],
+    languageOptions: {
+      globals: {
+        jest: 'readonly'
+      }
+    },
     rules: {
-      ...jestPlugin.configs['flat/recommended'].rules,
-      'no-console': 'off',
-      '@typescript-eslint/no-explicit-any': 'off'
+      'no-console': 'off', // Allow console in tests
+      '@typescript-eslint/no-explicit-any': 'off' // Allow any in tests
     }
   },
   {

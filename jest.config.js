@@ -24,5 +24,11 @@ module.exports = {
   testTimeout: 30000,
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
+  },
+  // Add this to define jest as a global
+  globals: {
+    'ts-jest': {
+      tsconfig: 'tsconfig.json'
+    }
   }
 };
