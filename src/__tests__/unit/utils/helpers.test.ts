@@ -1,8 +1,6 @@
 // backend/src/__tests__/unit/utils/helpers.test.ts
 import { 
-  generateInviteToken, 
   generateInviteLink, 
-  validateEmail, 
   validatePhone,
   paginate 
 } from '../../../utils/helpers';

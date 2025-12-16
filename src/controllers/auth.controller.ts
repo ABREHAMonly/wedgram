@@ -4,7 +4,7 @@ import User from '../models/User.model';
 import { generateToken } from '../middleware/auth.middleware';
 import { ResponseHandler } from '../utils/apiResponse';
 import { validateEmail, validatePhone } from '../utils/helpers';
-import logger from '../utils/logger'; // Add this import
+import logger from '../utils/logger';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -50,8 +50,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       },
       token,
     });
-  } catch (error: any) {
-    logger.error('Registration error:', error); // Use logger instead of console
+  } catch (error: unknown) { // Changed from any to unknown
+    logger.error('Registration error:', error);
     ResponseHandler.error(res, 'Registration failed');
   }
 };

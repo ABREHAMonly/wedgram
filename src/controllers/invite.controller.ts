@@ -2,10 +2,11 @@
 import { Request, Response } from 'express';
 import Guest from '../models/Guest.model';
 import Wedding from '../models/Wedding.model';
-import telegramService from '../services/telegram.service';
-import emailService from '../services/email.service';
 import { ResponseHandler } from '../utils/apiResponse';
 import { generateInviteToken, generateInviteLink } from '../utils/helpers';
+import logger from '../utils/logger'; // Add this import
+import { IGuest } from '../models/Guest.model'; // Add import for type
+import { IWedding } from '../models/Wedding.model'; // Add import for type
 
 export const createInvites = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -46,7 +47,7 @@ export const createInvites = async (req: Request, res: Response): Promise<void> 
           await sendInvitationToGuest(guest, wedding);
         }
       } catch (guestError) {
-        console.error(`Failed to create guest ${guestData.name}:`, guestError);
+        logger.error(`Failed to create guest ${guestData.name}:`, guestError);
         results.push({
           name: guestData.name,
           error: 'Failed to create',
@@ -61,7 +62,7 @@ export const createInvites = async (req: Request, res: Response): Promise<void> 
       total: createdGuests.length,
     });
   } catch (error) {
-    console.error('Create invites error:', error);
+    logger.error('Create invites error:', error);
     ResponseHandler.error(res, 'Failed to create invitations');
   }
 };
@@ -96,7 +97,7 @@ export const getGuests = async (req: Request, res: Response): Promise<void> => {
       totalPages: Math.ceil(total / Number(limit)),
     });
   } catch (error) {
-    console.error('Get guests error:', error);
+    logger.error('Get guests error:', error);
     ResponseHandler.error(res, 'Failed to fetch guests');
   }
 };
@@ -142,7 +143,7 @@ export const sendInvitations = async (req: Request, res: Response): Promise<void
           method: guest.invitationMethod,
         });
       } catch (error) {
-        console.error(`Failed to send to ${guest.name}:`, error);
+        logger.error(`Failed to send to ${guest.name}:`, error);
         results.push({
           id: guest._id,
           name: guest.name,
@@ -157,12 +158,12 @@ export const sendInvitations = async (req: Request, res: Response): Promise<void
       results,
     });
   } catch (error) {
-    console.error('Send invitations error:', error);
+    logger.error('Send invitations error:', error);
     ResponseHandler.error(res, 'Failed to send invitations');
   }
 };
 
-async function sendInvitationToGuest(guest: any, wedding: any): Promise<boolean> {
+async function sendInvitationToGuest(guest: IGuest, wedding: IWedding): Promise<boolean> {
   const inviteLink = generateInviteLink(guest.invitationToken);
 
   try {
@@ -174,14 +175,14 @@ async function sendInvitationToGuest(guest: any, wedding: any): Promise<boolean>
       if (emailService.isConfigured && emailService.isConfigured()) {
         return emailService.sendInvitation(guest.email, guest.name, inviteLink);
       } else {
-        console.warn('Email service is not configured');
+        logger.warn('Email service is not configured');
         return false;
       }
     }
 
     return false;
   } catch (error) {
-    console.error('Error sending invitation:', error);
+    logger.error('Error sending invitation:', error);
     return false;
   }
 }

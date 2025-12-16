@@ -1,6 +1,6 @@
 // backend/src/__tests__/unit/utils/apiResponse.test.ts
 import { Response } from 'express';
-import { ResponseHandler, APIResponse } from '../../../utils/apiResponse';
+import { ResponseHandler } from '../../../utils/apiResponse';
 
 describe('ResponseHandler', () => {
   let mockResponse: Partial<Response>;

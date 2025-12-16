@@ -3,7 +3,7 @@ import rateLimit from 'express-rate-limit';
 
 // Mock the rate limit module
 jest.mock('express-rate-limit', () => {
-  return jest.fn().mockImplementation((options) => {
+  return jest.fn().mockImplementation(() => {
     return jest.fn();
   });
 });
@@ -16,7 +16,7 @@ describe('Rate Limit Middleware', () => {
   it('should create global rate limiter with correct settings', () => {
     // We need to require the module after setting up the mock
     jest.isolateModules(() => {
-      const { globalRateLimiter } = require('../../../middleware/rateLimit.middleware');
+      require('../../../middleware/rateLimit.middleware');
       expect(rateLimit).toHaveBeenCalledWith(
         expect.objectContaining({
           windowMs: 900000, // 15 minutes

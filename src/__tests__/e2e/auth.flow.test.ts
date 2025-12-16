@@ -1,6 +1,5 @@
 // backend/src/__tests__/e2e/auth.flow.test.ts
 import request from 'supertest';
-import mongoose from 'mongoose';
 import app from '../../app';
 import User from '../../models/User.model';
 

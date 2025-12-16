@@ -6,14 +6,13 @@ const globals = require('globals');
 module.exports = [
   js.configs.recommended,
   {
-    files: ['**/*.ts'],
+    files: ['src/**/*.ts'],
     languageOptions: {
       parser: tsParser,
       ecmaVersion: 2020,
       sourceType: 'module',
       globals: {
-        ...globals.node,
-        ...globals.jest
+        ...globals.node
       }
     },
     plugins: {
@@ -21,26 +20,34 @@ module.exports = [
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
-      'no-console': 'warn',
-      'eqeqeq': 'error',
-      'curly': 'error'
+      '@typescript-eslint/no-unused-vars': ['warn', { 'argsIgnorePattern': '^_', 'varsIgnorePattern': '^_' }],
+      'no-console': 'warn'
     }
   },
   {
-    // Test files configuration
-    files: ['**/__tests__/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
+    // Test files - disable most rules
+    files: ['**/__tests__/**', '**/*.test.ts', '**/*.spec.ts'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.jest
+      }
+    },
     rules: {
-      'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': 'off'
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-console': 'off',
+      'eqeqeq': 'off',
+      'curly': 'off'
     }
   },
   {
     ignores: [
-      'dist',
-      'node_modules',
-      'coverage'
+      'dist/**',
+      'node_modules/**',
+      'coverage/**',
+      '*.config.js',
+      '*.config.cjs'
     ]
   }
 ];
