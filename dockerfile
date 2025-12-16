@@ -15,7 +15,6 @@ RUN npm ci
 
 # Copy source code
 COPY src ./src
-COPY public ./public
 
 # Build TypeScript
 RUN npm run build
@@ -32,7 +31,7 @@ ENV TZ=UTC
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \
-    mkdir -p /app/logs /app/uploads /app/public && \
+    mkdir -p /app/logs /app/uploads && \
     chown -R nodejs:nodejs /app
 
 # Copy package files
@@ -43,8 +42,6 @@ RUN npm ci --only=production
 
 # Copy built application from builder stage
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/public ./public
-
 
 # Switch to non-root user
 USER nodejs

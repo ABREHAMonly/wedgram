@@ -2,7 +2,7 @@ services:
   - type: web
     name: wedgram-backend
     env: docker
-    dockerfilePath: ./backend/Dockerfile
+    dockerfilePath: ./Dockerfile
     dockerContext: ./backend
     plan: free
     region: oregon
@@ -15,37 +15,18 @@ services:
       - key: PORT
         value: 5000
       - key: JWT_SECRET
-        generateValue: true
+        sync: false
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: BASE_URL
-        fromService:
-          type: web
-          name: wedgram-backend
-          property: url
+        sync: false
       - key: FRONTEND_URL
-        value: https://wedgram-frontend.onrender.com
+        sync: false
       - key: MONGO_URI
         sync: false
       - key: REDIS_URL
         sync: false
       - key: TELEGRAM_BOT_TOKEN
-        sync: false
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PORT
-        sync: false
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
-        sync: false
-      - key: EMAIL_FROM
-        sync: false
-      - key: CLOUDINARY_CLOUD_NAME
-        sync: false
-      - key: CLOUDINARY_API_KEY
-        sync: false
-      - key: CLOUDINARY_API_SECRET
         sync: false
     disk:
       name: uploads

@@ -4,7 +4,7 @@
   "description": "Wedding invitation platform with Telegram integration",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon --exec ts-node src/server.ts",
+     "dev": "nodemon --exec ts-node src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint src --ext .ts",
@@ -16,10 +16,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
-    "test:ci": "npm run test:all",
-    "type-check": "npx tsc --noEmit",
-    "docker:build": "docker build -t wedgram-backend .",
-    "docker:run": "docker run -p 5000:5000 --env-file .env wedgram-backend"
+    "test:ci": "npm run test:all"
   },
   "keywords": [
     "wedding",
