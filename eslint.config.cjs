@@ -1,6 +1,7 @@
 const js = require('@eslint/js');
 const tseslint = require('@typescript-eslint/eslint-plugin');
 const tsParser = require('@typescript-eslint/parser');
+const globals = require('globals');
 
 module.exports = [
   js.configs.recommended,
@@ -9,7 +10,11 @@ module.exports = [
     languageOptions: {
       parser: tsParser,
       ecmaVersion: 2020,
-      sourceType: 'module'
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        ...globals.jest
+      }
     },
     plugins: {
       '@typescript-eslint': tseslint
@@ -25,23 +30,17 @@ module.exports = [
   {
     // Test files configuration
     files: ['**/__tests__/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
-    languageOptions: {
-      globals: {
-        jest: 'readonly'
-      }
-    },
     rules: {
-      'no-console': 'off', // Allow console in tests
-      '@typescript-eslint/no-explicit-any': 'off' // Allow any in tests
+      'no-console': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off'
     }
   },
   {
     ignores: [
       'dist',
       'node_modules',
-      'coverage',
-      '**/*.test.ts',
-      '**/*.spec.ts'
+      'coverage'
     ]
   }
 ];

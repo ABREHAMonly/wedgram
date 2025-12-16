@@ -1,9 +1,10 @@
 // backend/src/controllers/auth.controller.ts
 import { Request, Response } from 'express';
 import User from '../models/User.model';
-import { generateToken } from '../middleware/auth.middleware'; // This now comes from auth.middleware
+import { generateToken } from '../middleware/auth.middleware';
 import { ResponseHandler } from '../utils/apiResponse';
 import { validateEmail, validatePhone } from '../utils/helpers';
+import logger from '../utils/logger'; // Add this import
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -50,7 +51,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       token,
     });
   } catch (error: any) {
-    console.error('Registration error:', error);
+    logger.error('Registration error:', error); // Use logger instead of console
     ResponseHandler.error(res, 'Registration failed');
   }
 };
@@ -90,7 +91,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       token,
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error:', error); // Use logger instead of console
     ResponseHandler.error(res, 'Login failed');
   }
 };
@@ -114,7 +115,7 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
       phone: user.phone,
     });
   } catch (error) {
-    console.error('Get profile error:', error);
+    logger.error('Get profile error:', error); // Use logger instead of console
     ResponseHandler.error(res);
   }
 };
@@ -161,7 +162,7 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
       phone: updatedUser.phone,
     });
   } catch (error) {
-    console.error('Update profile error:', error);
+    logger.error('Update profile error:', error); // Use logger instead of console
     ResponseHandler.error(res, 'Failed to update profile');
   }
 };

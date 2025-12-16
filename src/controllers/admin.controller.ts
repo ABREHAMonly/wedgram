@@ -4,11 +4,12 @@ import User from '../models/User.model';
 import Guest from '../models/Guest.model';
 import Wedding from '../models/Wedding.model';
 import { ResponseHandler } from '../utils/apiResponse';
+import logger from '../utils/logger'; // Add this import
 
 export const getStats = async (req: Request, res: Response): Promise<void> => {
   try {
     const [totalUsers, totalInvites, activeWeddings, pendingRSVPs] = await Promise.all([
-      User.countDocuments(), // Changed to count all users
+      User.countDocuments(),
       Guest.countDocuments(),
       Wedding.countDocuments(),
       Guest.countDocuments({ hasRSVPed: false, invited: true }),
@@ -21,7 +22,7 @@ export const getStats = async (req: Request, res: Response): Promise<void> => {
       pendingRSVPs,
     });
   } catch (error) {
-    console.error('Get stats error:', error);
+    logger.error('Get stats error:', error); // Use logger instead of console
     ResponseHandler.error(res, 'Failed to fetch statistics');
   }
 };
@@ -31,7 +32,7 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
     const { page = 1, limit = 20 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const users = await User.find() // Removed role filter
+    const users = await User.find()
       .skip(skip)
       .limit(Number(limit))
       .select('-password -refreshToken')
@@ -46,11 +47,10 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
       totalPages: Math.ceil(total / Number(limit)),
     });
   } catch (error) {
-    console.error('Get all users error:', error);
+    logger.error('Get all users error:', error); // Use logger instead of console
     ResponseHandler.error(res, 'Failed to fetch users');
   }
 };
-
 
 export const getAllGuests = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -72,7 +72,7 @@ export const getAllGuests = async (req: Request, res: Response): Promise<void> =
       totalPages: Math.ceil(total / Number(limit)),
     });
   } catch (error) {
-    console.error('Get all guests error:', error);
+    logger.error('Get all guests error:', error); // Use logger instead of console
     ResponseHandler.error(res, 'Failed to fetch guests');
   }
 };
@@ -102,7 +102,7 @@ export const createAdmin = async (req: Request, res: Response): Promise<void> =>
       createdAt: admin.createdAt,
     });
   } catch (error) {
-    console.error('Create admin error:', error);
+    logger.error('Create admin error:', error); // Use logger instead of console
     ResponseHandler.error(res, 'Failed to create admin');
   }
 };

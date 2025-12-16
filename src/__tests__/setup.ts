@@ -20,6 +20,7 @@ beforeAll(async () => {
   
   await mongoose.connect(mongoUri);
   
+  // Allowed in test files
   console.log('✅ Test MongoDB connected to:', mongoUri);
   
   // Mock environment variables
@@ -32,19 +33,18 @@ beforeAll(async () => {
   process.env.INVITE_BASE_URL = 'http://localhost:3000/invite';
   
   // Mock external services for integration tests
-  // Use relative path from the __tests__ directory
   jest.mock('../services/email.service', () => ({
-  EmailService: jest.fn().mockImplementation(() => ({
-    sendInvitation: jest.fn().mockResolvedValue(true),
-    sendEmail: jest.fn().mockResolvedValue(true), // Add this line
-    isConfigured: jest.fn().mockReturnValue(true),
-  })),
-  default: {
-    sendInvitation: jest.fn().mockResolvedValue(true),
-    sendEmail: jest.fn().mockResolvedValue(true), // Add this line
-    isConfigured: jest.fn().mockReturnValue(true),
-  }
-}));
+    EmailService: jest.fn().mockImplementation(() => ({
+      sendInvitation: jest.fn().mockResolvedValue(true),
+      sendEmail: jest.fn().mockResolvedValue(true),
+      isConfigured: jest.fn().mockReturnValue(true),
+    })),
+    default: {
+      sendInvitation: jest.fn().mockResolvedValue(true),
+      sendEmail: jest.fn().mockResolvedValue(true),
+      isConfigured: jest.fn().mockReturnValue(true),
+    }
+  }));
 
   jest.mock('../services/telegram.service', () => ({
     sendInvitation: jest.fn().mockResolvedValue(true),

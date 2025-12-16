@@ -64,6 +64,7 @@ beforeAll(async () => {
   // Connect to MongoDB
   await mongoose.connect(mongoUri);
   
+  // Allowed in test files
   console.log('✅ Test MongoDB connected');
 });
 
@@ -75,7 +76,7 @@ beforeEach(async () => {
     try {
       await collections[key].deleteMany({});
     } catch (error) {
-      // Collection might not exist
+      // Collection might not exist - ignore error
     }
   }
 });

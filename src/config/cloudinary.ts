@@ -1,5 +1,6 @@
 // backend/src/config/cloudinary.ts
 import { v2 as cloudinary } from 'cloudinary';
+import logger from '../utils/logger'; // Add this import
 
 export const configureCloudinary = () => {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
@@ -7,7 +8,7 @@ export const configureCloudinary = () => {
   const apiSecret = process.env.CLOUDINARY_API_SECRET;
   
   if (!cloudName || !apiKey || !apiSecret) {
-    console.warn('⚠️ Cloudinary configuration missing. Image uploads will not work.');
+    logger.warn('⚠️ Cloudinary configuration missing. Image uploads will not work.'); // Use logger instead of console
     return;
   }
   
@@ -18,7 +19,7 @@ export const configureCloudinary = () => {
     secure: true,
   });
   
-  console.log('✅ Cloudinary configured');
+  logger.info('✅ Cloudinary configured'); // Use logger instead of console
 };
 
 export default cloudinary;
