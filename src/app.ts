@@ -9,7 +9,6 @@ import { errorHandler, notFoundHandler } from './middleware/error.middleware';
 import { globalRateLimiter } from './middleware/rateLimit.middleware';
 import routes from './routes';
 import logger from './utils/logger';
-import mongoose from 'mongoose';
 
 const app = express();
 
@@ -47,15 +46,27 @@ app.use((req, res, next) => {
 
 // Health check
 app.get('/health', (req, res) => {
-  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
-  
   res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'WedGram Backend',
-    version: process.env.npm_package_version || '1.0.0',
-    uptime: process.uptime(),
-    database: dbStatus
+    version: '1.0.0',
+  });
+});
+
+// Root route
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'Welcome to WedGram API',
+    version: '1.0.0',
+    documentation: 'https://github.com/ABREHAMonly/wedgram',
+    endpoints: {
+      auth: '/api/v1/auth',
+      invites: '/api/v1/invites',
+      rsvp: '/api/v1/rsvp',
+      admin: '/api/v1/admin'
+    },
+    health: '/health'
   });
 });
 

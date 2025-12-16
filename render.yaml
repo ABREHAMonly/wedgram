@@ -3,7 +3,7 @@ services:
     name: wedgram-backend
     env: docker
     dockerfilePath: ./Dockerfile
-    dockerContext: ./backend
+    dockerContext: .
     plan: free
     region: oregon
     branch: main
