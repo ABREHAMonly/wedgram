@@ -12,6 +12,8 @@ import logger from './utils/logger';
 import mongoose from 'mongoose';
 
 const app = express();
+// Trust proxy (IMPORTANT for Render/Heroku/Vercel)
+app.set('trust proxy', 1); // Add this line
 
 // Connect to database
 connectDB().catch((err) => {
@@ -50,7 +52,34 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check
+
+
+app.get('/api/test', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Backend is working',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/test-wedding', async (req, res) => {
+  try {
+    const weddingCount = await mongoose.connection.db?.collection('weddings')?.countDocuments();
+    res.json({
+      status: 'ok',
+      weddingCollectionExists: weddingCount !== undefined,
+      weddingCount: weddingCount || 0
+    });
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    res.json({
+      status: 'error',
+      message: errorMessage
+    });
+  }
+});
+
+// Health check - THIS SHOULD BE /health (not /api/v1/health)
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'healthy',
@@ -75,34 +104,7 @@ app.get('/', (req, res) => {
     health: '/health'
   });
 });
-// Add this route before your API routes
-app.get('/api/test', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: 'Backend is working',
-    timestamp: new Date().toISOString()
-  });
-});
 
-app.get('/api/test-wedding', async (req, res) => {
-  try {
-    // Check if wedding collection exists
-    const weddingCount = await mongoose.connection.db?.collection('weddings')?.countDocuments();
-    res.json({
-      status: 'ok',
-      weddingCollectionExists: weddingCount !== undefined,
-      weddingCount: weddingCount || 0
-    });
-  } catch (error) {
-    // FIX: Check if error is an instance of Error
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    
-    res.json({
-      status: 'error',
-      message: errorMessage
-    });
-  }
-});
 // API Routes
 app.use('/api/v1', routes);
 

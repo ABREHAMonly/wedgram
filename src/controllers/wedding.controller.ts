@@ -4,14 +4,15 @@ import Wedding from '../models/Wedding.model';
 import { ResponseHandler } from '../utils/apiResponse';
 import logger from '../utils/logger';
 
-// In the createWedding function, add this logging:
 export const createWedding = async (req: Request, res: Response): Promise<void> => {
   try {
-    logger.info('Creating wedding with data:', req.body);
-   logger.info('User:', req.user);
+    logger.info('=== CREATE WEDDING REQUEST ===');
+    logger.info('User:', req.user);
+    logger.info('Request body:', req.body);
     
     const user = req.user;
     if (!user) {
+      logger.info('No user found in request');
       ResponseHandler.unauthorized(res);
       return;
     }
@@ -23,6 +24,11 @@ export const createWedding = async (req: Request, res: Response): Promise<void> 
       ResponseHandler.error(res, 'Wedding already exists', 400);
       return;
     }
+
+    logger.info('Creating wedding with data:', {
+      user: user._id,
+      ...req.body,
+    });
 
     const wedding = await Wedding.create({
       user: user._id,
@@ -38,19 +44,32 @@ export const createWedding = async (req: Request, res: Response): Promise<void> 
       venue: wedding.venue,
     });
   } catch (error: any) {
-    logger.error('Create wedding error:', error);
+    logger.error('=== CREATE WEDDING ERROR ===');
+    logger.error('Error name:', error.name);
+    logger.error('Error message:', error.message);
     logger.error('Error stack:', error.stack);
-    logger.error('Error details:', {
-      name: error.name,
-      message: error.message,
-      errors: error.errors,
-    });
+    
+    // Log validation errors if they exist
+    if (error.name === 'ValidationError') {
+      logger.error('Validation errors:', error.errors);
+      const errors = Object.values(error.errors).map((err: any) => ({
+        field: err.path,
+        message: err.message,
+      }));
+      ResponseHandler.validationError(res, errors);
+      return;
+    }
+    
+    logger.error('Create wedding error:', error);
     ResponseHandler.error(res, 'Failed to create wedding');
   }
 };
 
 export const getWedding = async (req: Request, res: Response): Promise<void> => {
   try {
+    logger.info('=== GET WEDDING REQUEST ===');
+    logger.info('User:', req.user);
+    
     const user = req.user;
     if (!user) {
       ResponseHandler.unauthorized(res);
@@ -59,10 +78,13 @@ export const getWedding = async (req: Request, res: Response): Promise<void> => 
 
     const wedding = await Wedding.findOne({ user: user._id });
     if (!wedding) {
+      logger.info('No wedding found for user:', user._id);
       ResponseHandler.notFound(res, 'Wedding not found');
       return;
     }
 
+    logger.info('Wedding found:', wedding._id);
+    
     ResponseHandler.success(res, {
       id: wedding._id,
       title: wedding.title,
@@ -77,7 +99,7 @@ export const getWedding = async (req: Request, res: Response): Promise<void> => 
       schedule: wedding.schedule,
     });
   } catch (error) {
-    logger.error('Get wedding error:', error);
+    console.error('Get wedding error:', error);
     ResponseHandler.error(res, 'Failed to fetch wedding');
   }
 };

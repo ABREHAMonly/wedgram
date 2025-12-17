@@ -3,46 +3,63 @@ import Joi from 'joi';
 
 export const createWeddingSchema = Joi.object({
   title: Joi.string()
-    .min(3)
+    .min(1)
     .max(200)
-    .required(),
+    .required()
+    .messages({
+      'string.empty': 'Wedding title is required',
+      'string.min': 'Wedding title must be at least 1 character',
+      'string.max': 'Wedding title cannot exceed 200 characters',
+    }),
   
   description: Joi.string()
     .max(1000)
     .optional()
-    .allow('', null),
+    .allow('', null)
+    .default(''),
   
   date: Joi.alternatives()
     .try(
       Joi.date(),
-      Joi.string().isoDate()
+      Joi.string()
     )
-    .required(),
+    .required()
+    .messages({
+      'any.required': 'Wedding date is required',
+      'alternatives.match': 'Wedding date must be a valid date',
+    }),
   
   venue: Joi.string()
-    .min(3)
+    .min(1)
     .max(500)
-    .required(),
+    .required()
+    .messages({
+      'string.empty': 'Venue is required',
+      'string.min': 'Venue must be at least 1 character',
+    }),
   
   venueAddress: Joi.string()
     .max(1000)
     .optional()
-    .allow('', null),
+    .allow('', null)
+    .default(''),
   
   dressCode: Joi.string()
     .max(200)
     .optional()
-    .allow('', null),
+    .allow('', null)
+    .default(''),
   
   themeColor: Joi.string()
-    .pattern(/^#[0-9A-Fa-f]{6}$/)
+    .pattern(/^#([0-9A-Fa-f]{3}){1,2}$/)
     .optional()
-    .allow('', null),
+    .allow('', null)
+    .default('#667eea'),
 });
 
 export const updateWeddingSchema = Joi.object({
   title: Joi.string()
-    .min(3)
+    .min(1)
     .max(200),
   
   description: Joi.string()
@@ -53,11 +70,11 @@ export const updateWeddingSchema = Joi.object({
   date: Joi.alternatives()
     .try(
       Joi.date(),
-      Joi.string().isoDate()
+      Joi.string()
     ),
   
   venue: Joi.string()
-    .min(3)
+    .min(1)
     .max(500),
   
   venueAddress: Joi.string()
@@ -71,7 +88,7 @@ export const updateWeddingSchema = Joi.object({
     .allow('', null),
   
   themeColor: Joi.string()
-    .pattern(/^#[0-9A-Fa-f]{6}$/)
+    .pattern(/^#([0-9A-Fa-f]{3}){1,2}$/)
     .optional()
     .allow('', null),
   
