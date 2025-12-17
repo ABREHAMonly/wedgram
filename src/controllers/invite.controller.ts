@@ -8,6 +8,7 @@ import logger from '../utils/logger';
 import { IGuest } from '../models/Guest.model';
 import { IWedding } from '../models/Wedding.model';
 import { Types } from 'mongoose';
+import { NotificationService } from '../services/notification.service';
 
 export const createInvites = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -50,6 +51,13 @@ export const createInvites = async (req: Request, res: Response): Promise<void> 
           telegramUsername, // Use cleaned username
           invitationToken,
         });
+
+      // Create notification for guest added
+      await NotificationService.notifyGuestAdded(
+        user._id,
+        guestData.name,
+        guest._id
+      );
 
         logger.info(`Guest created: ${guest._id}`)
         
@@ -188,44 +196,64 @@ export const sendInvitations = async (req: Request, res: Response): Promise<void
 
 async function sendInvitationToGuest(guest: IGuest, _wedding: IWedding): Promise<boolean> {
   const inviteLink = generateInviteLink(guest.invitationToken);
-  logger.info(`=== SENDING INVITATION TO GUEST ===`)
-  logger.info(`Guest: ${guest.name}`)
-   logger.info(`Method: ${guest.invitationMethod}`)
-   logger.info(`Invite link: ${inviteLink}`)
+  logger.info(`=== SENDING INVITATION TO GUEST ===`);
+  logger.info(`Guest: ${guest.name}`);
+  logger.info(`Method: ${guest.invitationMethod}`);
+  logger.info(`Invite link: ${inviteLink}`);
+
+  let sent = false;
 
   try {
     if (guest.invitationMethod === 'telegram') {
-      logger.info(`Looking for Telegram username: ${guest.telegramUsername}`)
-      
-      // For Telegram, we need to have a chatId
-      // If no chatId, we can't send the invitation yet
+      logger.info(`Looking for Telegram username: ${guest.telegramUsername}`);
+
       if (!guest.chatId) {
-         logger.warn(`No chatId for guest ${guest.name}. Guest needs to start the bot first.`)
-        
-        // We could try to get chatId from username, but usually we need them to start the bot
-        // For now, return false - the invitation will be sent when they start the bot
-        return false
+        logger.warn(`No chatId for guest ${guest.name}. Guest needs to start the bot first.`);
+        return false;
       }
-      
-       logger.info(`Sending Telegram invitation to chatId: ${guest.chatId}`)
+
+      logger.info(`Sending Telegram invitation to chatId: ${guest.chatId}`);
       const telegramService = (await import('../services/telegram.service')).default;
-      return await telegramService.sendInvitation(guest.chatId, guest.name, inviteLink);
       
+      // Capture result instead of returning immediately
+      sent = await telegramService.sendInvitation(guest.chatId, guest.name, inviteLink);
+
     } else if (guest.invitationMethod === 'email' && guest.email) {
-       logger.info(`Sending email invitation to: ${guest.email}`)
+      logger.info(`Sending email invitation to: ${guest.email}`);
       const emailService = (await import('../services/email.service')).default;
+      
       if (emailService.isConfigured && emailService.isConfigured()) {
-        return await emailService.sendInvitation(guest.email, guest.name, inviteLink);
+        // Capture result instead of returning immediately
+        sent = await emailService.sendInvitation(guest.email, guest.name, inviteLink);
       } else {
-         logger.warn('Email service is not configured')
-        return false
+        logger.warn('Email service is not configured');
+        return false;
       }
+    } else {
+      logger.warn(`No valid invitation method found for ${guest.name}`);
+      return false;
     }
 
-     logger.warn(`No valid invitation method found for ${guest.name}`)
-    return false
+    // --- NEW LOGIC ADDED HERE ---
+    if (sent) {
+      try {
+        await NotificationService.notifyInvitationSent(
+          guest.inviter,
+          guest.name,
+          guest.invitationMethod,
+          guest._id
+        );
+      } catch (notifyError) {
+        // We log the error but don't fail the whole function because the invite WAS sent
+        logger.error(`Failed to send notification for guest ${guest.name}`, notifyError);
+      }
+    }
+    // ----------------------------
+
+    return sent;
+
   } catch (error) {
-    console.error(`Error sending invitation to ${guest.name}:`, error)
-    return false
+    console.error(`Error sending invitation to ${guest.name}:`, error);
+    return false;
   }
 }

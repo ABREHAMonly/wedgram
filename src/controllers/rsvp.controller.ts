@@ -4,6 +4,7 @@ import Guest from '../models/Guest.model';
 import RSVP from '../models/RSVP.model';
 import Wedding from '../models/Wedding.model';
 import { ResponseHandler } from '../utils/apiResponse';
+import { NotificationService } from '../services/notification.service';
 
 export const submitRSVP = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -41,6 +42,15 @@ export const submitRSVP = async (req: Request, res: Response): Promise<void> => 
       message,
       dietaryRestrictions,
     });
+
+    if (guest) {
+      await NotificationService.notifyRSVP(
+        guest.inviter,
+        guest.name,
+        response,
+        guest._id
+      );
+    }
 
     guest.hasRSVPed = true;
     guest.rsvpStatus = response;
