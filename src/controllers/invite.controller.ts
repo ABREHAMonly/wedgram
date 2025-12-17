@@ -21,7 +21,7 @@ export const createInvites = async (req: Request, res: Response): Promise<void> 
     const wedding = await Wedding.findOne({ user: user._id });
 
     if (!wedding) {
-      ResponseHandler.error(res, 'Please create your wedding details first', 400);
+      ResponseHandler.error(res, 'Please create your wedding details first. Go to Settings > Wedding to set up your wedding.', 400);
       return;
     }
 
