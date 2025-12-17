@@ -17,11 +17,15 @@ export const createInvites = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
+    logger.info('=== CREATE INVITES REQUEST ===')
+    logger.info('User:', user._id)
+    logger.info('Request body:', req.body)
+
     const { guests, sendImmediately } = req.body;
     const wedding = await Wedding.findOne({ user: user._id });
 
     if (!wedding) {
-      ResponseHandler.error(res, 'Please create your wedding details first. Go to Settings > Wedding to set up your wedding.', 400);
+      ResponseHandler.error(res, 'Please create your wedding details first', 400);
       return;
     }
 
@@ -30,22 +34,37 @@ export const createInvites = async (req: Request, res: Response): Promise<void> 
 
     for (const guestData of guests) {
       try {
+        // Clean Telegram username - remove @ if present
+        let telegramUsername = guestData.telegramUsername
+        if (telegramUsername.startsWith('@')) {
+          telegramUsername = telegramUsername.substring(1)
+        }
+        
+        logger.info(`Processing guest: ${guestData.name}`)
+       logger.info(`Telegram username (cleaned): ${telegramUsername}`)
+        
         const invitationToken = generateInviteToken();
         const guest = await Guest.create({
           inviter: new Types.ObjectId(user._id),
           ...guestData,
+          telegramUsername, // Use cleaned username
           invitationToken,
         });
 
+        logger.info(`Guest created: ${guest._id}`)
+        
         createdGuests.push(guest);
         results.push({
           id: guest._id,
           name: guestData.name,
           status: 'created',
+          telegramUsername: guest.telegramUsername
         });
 
         if (sendImmediately) {
-          await sendInvitationToGuest(guest, wedding);
+          logger.info(`Sending invitation immediately to ${guest.name}`)
+          const sent = await sendInvitationToGuest(guest, wedding);
+          logger.info(`Invitation sent: ${sent}`)
         }
       } catch (guestError) {
         logger.error(`Failed to create guest ${guestData.name}:`, guestError);
@@ -169,24 +188,44 @@ export const sendInvitations = async (req: Request, res: Response): Promise<void
 
 async function sendInvitationToGuest(guest: IGuest, _wedding: IWedding): Promise<boolean> {
   const inviteLink = generateInviteLink(guest.invitationToken);
+  logger.info(`=== SENDING INVITATION TO GUEST ===`)
+  logger.info(`Guest: ${guest.name}`)
+   logger.info(`Method: ${guest.invitationMethod}`)
+   logger.info(`Invite link: ${inviteLink}`)
 
   try {
-    if (guest.invitationMethod === 'telegram' && guest.chatId) {
+    if (guest.invitationMethod === 'telegram') {
+      logger.info(`Looking for Telegram username: ${guest.telegramUsername}`)
+      
+      // For Telegram, we need to have a chatId
+      // If no chatId, we can't send the invitation yet
+      if (!guest.chatId) {
+         logger.warn(`No chatId for guest ${guest.name}. Guest needs to start the bot first.`)
+        
+        // We could try to get chatId from username, but usually we need them to start the bot
+        // For now, return false - the invitation will be sent when they start the bot
+        return false
+      }
+      
+       logger.info(`Sending Telegram invitation to chatId: ${guest.chatId}`)
       const telegramService = (await import('../services/telegram.service')).default;
-      return telegramService.sendInvitation(guest.chatId, guest.name, inviteLink);
+      return await telegramService.sendInvitation(guest.chatId, guest.name, inviteLink);
+      
     } else if (guest.invitationMethod === 'email' && guest.email) {
+       logger.info(`Sending email invitation to: ${guest.email}`)
       const emailService = (await import('../services/email.service')).default;
       if (emailService.isConfigured && emailService.isConfigured()) {
-        return emailService.sendInvitation(guest.email, guest.name, inviteLink);
+        return await emailService.sendInvitation(guest.email, guest.name, inviteLink);
       } else {
-        logger.warn('Email service is not configured');
-        return false;
+         logger.warn('Email service is not configured')
+        return false
       }
     }
 
-    return false;
+     logger.warn(`No valid invitation method found for ${guest.name}`)
+    return false
   } catch (error) {
-    logger.error('Error sending invitation:', error);
-    return false;
+    console.error(`Error sending invitation to ${guest.name}:`, error)
+    return false
   }
 }

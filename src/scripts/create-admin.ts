@@ -12,21 +12,19 @@ const createAdmin = async () => {
     console.log('✅ Connected to MongoDB');
 
     // Check if admin already exists
-    const existingAdmin = await User.findOne({ email: 'admin@wedgram.com' });
+    const existingAdmin = await User.findOne({ email: 'real email' });
     if (existingAdmin) {
       console.log('⚠️ Admin user already exists');
       process.exit(0);
     }
 
     // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash('real password!', salt);
-
+    
     // Create admin user
     const admin = await User.create({
       name: 'WedGram Admin',
       email: 'real email',
-      password: hashedPassword,
+      password: 'real password',
       role: 'admin',
       isActive: true,
       weddingDate: new Date('2024-12-31'),
@@ -36,7 +34,7 @@ const createAdmin = async () => {
 
     console.log('✅ Admin user created successfully!');
     console.log('📧 Email:', admin.email);
-    console.log('🔑 Password: real password!');
+    console.log('🔑 Password: real password');
     console.log('⚠️ Please change the password immediately after first login');
 
     process.exit(0);
