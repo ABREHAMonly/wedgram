@@ -1,3 +1,4 @@
+//src\validations\wedding.validation.ts
 import Joi from 'joi';
 
 export const createWeddingSchema = Joi.object({
@@ -8,9 +9,14 @@ export const createWeddingSchema = Joi.object({
   
   description: Joi.string()
     .max(1000)
-    .optional(),
+    .optional()
+    .allow('', null),
   
-  date: Joi.date()
+  date: Joi.alternatives()
+    .try(
+      Joi.date(),
+      Joi.string().isoDate()
+    )
     .required(),
   
   venue: Joi.string()
@@ -20,15 +26,18 @@ export const createWeddingSchema = Joi.object({
   
   venueAddress: Joi.string()
     .max(1000)
-    .optional(),
+    .optional()
+    .allow('', null),
   
   dressCode: Joi.string()
     .max(200)
-    .optional(),
+    .optional()
+    .allow('', null),
   
   themeColor: Joi.string()
     .pattern(/^#[0-9A-Fa-f]{6}$/)
-    .optional(),
+    .optional()
+    .allow('', null),
 });
 
 export const updateWeddingSchema = Joi.object({
@@ -37,27 +46,42 @@ export const updateWeddingSchema = Joi.object({
     .max(200),
   
   description: Joi.string()
-    .max(1000),
+    .max(1000)
+    .optional()
+    .allow('', null),
   
-  date: Joi.date(),
+  date: Joi.alternatives()
+    .try(
+      Joi.date(),
+      Joi.string().isoDate()
+    ),
   
   venue: Joi.string()
     .min(3)
     .max(500),
   
   venueAddress: Joi.string()
-    .max(1000),
+    .max(1000)
+    .optional()
+    .allow('', null),
   
   dressCode: Joi.string()
-    .max(200),
+    .max(200)
+    .optional()
+    .allow('', null),
   
   themeColor: Joi.string()
-    .pattern(/^#[0-9A-Fa-f]{6}$/),
+    .pattern(/^#[0-9A-Fa-f]{6}$/)
+    .optional()
+    .allow('', null),
   
   coverImage: Joi.string()
-    .uri(),
+    .uri()
+    .optional()
+    .allow('', null),
   
   gallery: Joi.array()
     .items(Joi.string().uri())
-    .max(20),
+    .max(20)
+    .optional(),
 });

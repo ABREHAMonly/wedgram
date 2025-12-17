@@ -1,3 +1,4 @@
+//src\routes\wedding.routes.ts
 import { Router } from 'express';
 import { createWedding, getWedding, updateWedding, checkWedding } from '../controllers/wedding.controller';
 import { protect } from '../middleware/auth.middleware';

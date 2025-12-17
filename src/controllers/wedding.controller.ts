@@ -1,10 +1,15 @@
+// src\controllers\wedding.controller.ts
 import { Request, Response } from 'express';
 import Wedding from '../models/Wedding.model';
 import { ResponseHandler } from '../utils/apiResponse';
 import logger from '../utils/logger';
 
+// In the createWedding function, add this logging:
 export const createWedding = async (req: Request, res: Response): Promise<void> => {
   try {
+    logger.info('Creating wedding with data:', req.body);
+   logger.info('User:', req.user);
+    
     const user = req.user;
     if (!user) {
       ResponseHandler.unauthorized(res);
@@ -14,6 +19,7 @@ export const createWedding = async (req: Request, res: Response): Promise<void> 
     // Check if wedding already exists
     const existingWedding = await Wedding.findOne({ user: user._id });
     if (existingWedding) {
+      logger.info('Wedding already exists for user:', user._id);
       ResponseHandler.error(res, 'Wedding already exists', 400);
       return;
     }
@@ -23,6 +29,8 @@ export const createWedding = async (req: Request, res: Response): Promise<void> 
       ...req.body,
     });
 
+    logger.info('Wedding created successfully:', wedding._id);
+    
     ResponseHandler.created(res, {
       id: wedding._id,
       title: wedding.title,
@@ -31,6 +39,12 @@ export const createWedding = async (req: Request, res: Response): Promise<void> 
     });
   } catch (error: any) {
     logger.error('Create wedding error:', error);
+    logger.error('Error stack:', error.stack);
+    logger.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      errors: error.errors,
+    });
     ResponseHandler.error(res, 'Failed to create wedding');
   }
 };

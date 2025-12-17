@@ -9,6 +9,7 @@ import { errorHandler, notFoundHandler } from './middleware/error.middleware';
 import { globalRateLimiter } from './middleware/rateLimit.middleware';
 import routes from './routes';
 import logger from './utils/logger';
+import mongoose from 'mongoose';
 
 const app = express();
 
@@ -74,7 +75,34 @@ app.get('/', (req, res) => {
     health: '/health'
   });
 });
+// Add this route before your API routes
+app.get('/api/test', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Backend is working',
+    timestamp: new Date().toISOString()
+  });
+});
 
+app.get('/api/test-wedding', async (req, res) => {
+  try {
+    // Check if wedding collection exists
+    const weddingCount = await mongoose.connection.db?.collection('weddings')?.countDocuments();
+    res.json({
+      status: 'ok',
+      weddingCollectionExists: weddingCount !== undefined,
+      weddingCount: weddingCount || 0
+    });
+  } catch (error) {
+    // FIX: Check if error is an instance of Error
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    
+    res.json({
+      status: 'error',
+      message: errorMessage
+    });
+  }
+});
 // API Routes
 app.use('/api/v1', routes);
 
