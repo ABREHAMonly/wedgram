@@ -370,3 +370,45 @@ export const deleteGalleryImage = async (req: Request, res: Response): Promise<v
     ResponseHandler.error(res, 'Failed to delete image');
   }
 };
+
+export const getSchedule = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      ResponseHandler.unauthorized(res);
+      return;
+    }
+
+    const wedding = await Wedding.findOne({ user: user._id });
+    if (!wedding) {
+      ResponseHandler.notFound(res, 'Wedding not found');
+      return;
+    }
+
+    ResponseHandler.success(res, wedding.schedule || []);
+  } catch (error) {
+    logger.error('Get schedule error:', error);
+    ResponseHandler.error(res, 'Failed to fetch schedule');
+  }
+};
+
+export const getGallery = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      ResponseHandler.unauthorized(res);
+      return;
+    }
+
+    const wedding = await Wedding.findOne({ user: user._id });
+    if (!wedding) {
+      ResponseHandler.notFound(res, 'Wedding not found');
+      return;
+    }
+
+    ResponseHandler.success(res, wedding.gallery || []);
+  } catch (error) {
+    logger.error('Get gallery error:', error);
+    ResponseHandler.error(res, 'Failed to fetch gallery');
+  }
+};

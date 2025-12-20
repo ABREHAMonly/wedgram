@@ -1,9 +1,9 @@
-// backend/src/routes/gallery.routes.ts
 import { Router } from 'express';
 import { 
   updateGallery, 
   addGalleryImage, 
-  deleteGalleryImage 
+  deleteGalleryImage,
+  getGallery // Add this
 } from '../controllers/wedding.controller';
 import { protect } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
@@ -13,6 +13,8 @@ const router = Router();
 
 router.use(protect);
 
+// Add this GET route
+router.get('/', getGallery);
 router.put('/', validate(updateGallerySchema), updateGallery);
 router.post('/images', validate(galleryImageSchema), addGalleryImage);
 router.delete('/images/:imageId', deleteGalleryImage);
