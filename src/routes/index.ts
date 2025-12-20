@@ -1,11 +1,14 @@
-// src/routes/index.ts
+// backend/src/routes/index.ts
 import { Router } from 'express';
 import authRoutes from './auth.routes';
 import inviteRoutes from './invite.routes';
 import rsvpRoutes from './rsvp.routes';
 import adminRoutes from './admin.routes';
 import weddingRoutes from './wedding.routes';
-import notificationRoutes from './notification.routes'; // Add this
+import notificationRoutes from './notification.routes';
+import scheduleRoutes from './schedule.routes';
+import galleryRoutes from './gallery.routes';
+import giftRoutes from './gift.routes';
 
 const router = Router();
 
@@ -14,6 +17,9 @@ router.use('/invites', inviteRoutes);
 router.use('/rsvp', rsvpRoutes);
 router.use('/admin', adminRoutes);
 router.use('/wedding', weddingRoutes);
-router.use('/notifications', notificationRoutes); // Add this
+router.use('/notifications', notificationRoutes);
+router.use('/schedule', scheduleRoutes);
+router.use('/gallery', galleryRoutes);
+router.use('/gifts', giftRoutes);
 
 export default router;

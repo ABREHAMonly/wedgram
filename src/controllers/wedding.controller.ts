@@ -1,4 +1,4 @@
-// src\controllers\wedding.controller.ts
+// backend/src/controllers/wedding.controller.ts
 import { Request, Response } from 'express';
 import Wedding from '../models/Wedding.model';
 import { ResponseHandler } from '../utils/apiResponse';
@@ -6,13 +6,8 @@ import logger from '../utils/logger';
 
 export const createWedding = async (req: Request, res: Response): Promise<void> => {
   try {
-    logger.info('=== CREATE WEDDING REQUEST ===');
-    logger.info('User:', req.user);
-    logger.info('Request body:', req.body);
-    
     const user = req.user;
     if (!user) {
-      logger.info('No user found in request');
       ResponseHandler.unauthorized(res);
       return;
     }
@@ -20,23 +15,15 @@ export const createWedding = async (req: Request, res: Response): Promise<void> 
     // Check if wedding already exists
     const existingWedding = await Wedding.findOne({ user: user._id });
     if (existingWedding) {
-      logger.info('Wedding already exists for user:', user._id);
       ResponseHandler.error(res, 'Wedding already exists', 400);
       return;
     }
-
-    logger.info('Creating wedding with data:', {
-      user: user._id,
-      ...req.body,
-    });
 
     const wedding = await Wedding.create({
       user: user._id,
       ...req.body,
     });
 
-    logger.info('Wedding created successfully:', wedding._id);
-    
     ResponseHandler.created(res, {
       id: wedding._id,
       title: wedding.title,
@@ -44,22 +31,6 @@ export const createWedding = async (req: Request, res: Response): Promise<void> 
       venue: wedding.venue,
     });
   } catch (error: any) {
-    logger.error('=== CREATE WEDDING ERROR ===');
-    logger.error('Error name:', error.name);
-    logger.error('Error message:', error.message);
-    logger.error('Error stack:', error.stack);
-    
-    // Log validation errors if they exist
-    if (error.name === 'ValidationError') {
-      logger.error('Validation errors:', error.errors);
-      const errors = Object.values(error.errors).map((err: any) => ({
-        field: err.path,
-        message: err.message,
-      }));
-      ResponseHandler.validationError(res, errors);
-      return;
-    }
-    
     logger.error('Create wedding error:', error);
     ResponseHandler.error(res, 'Failed to create wedding');
   }
@@ -67,9 +38,6 @@ export const createWedding = async (req: Request, res: Response): Promise<void> 
 
 export const getWedding = async (req: Request, res: Response): Promise<void> => {
   try {
-    logger.info('=== GET WEDDING REQUEST ===');
-    logger.info('User:', req.user);
-    
     const user = req.user;
     if (!user) {
       ResponseHandler.unauthorized(res);
@@ -78,13 +46,10 @@ export const getWedding = async (req: Request, res: Response): Promise<void> => 
 
     const wedding = await Wedding.findOne({ user: user._id });
     if (!wedding) {
-      logger.info('No wedding found for user:', user._id);
       ResponseHandler.notFound(res, 'Wedding not found');
       return;
     }
 
-    logger.info('Wedding found:', wedding._id);
-    
     ResponseHandler.success(res, {
       id: wedding._id,
       title: wedding.title,
@@ -95,11 +60,11 @@ export const getWedding = async (req: Request, res: Response): Promise<void> => 
       dressCode: wedding.dressCode,
       themeColor: wedding.themeColor,
       coverImage: wedding.coverImage,
-      gallery: wedding.gallery,
-      schedule: wedding.schedule,
+      gallery: wedding.gallery || [],
+      schedule: wedding.schedule || [],
     });
   } catch (error) {
-    console.error('Get wedding error:', error);
+    logger.error('Get wedding error:', error);
     ResponseHandler.error(res, 'Failed to fetch wedding');
   }
 };
@@ -133,8 +98,8 @@ export const updateWedding = async (req: Request, res: Response): Promise<void> 
       dressCode: wedding.dressCode,
       themeColor: wedding.themeColor,
       coverImage: wedding.coverImage,
-      gallery: wedding.gallery,
-      schedule: wedding.schedule,
+      gallery: wedding.gallery || [],
+      schedule: wedding.schedule || [],
     });
   } catch (error) {
     logger.error('Update wedding error:', error);
@@ -164,5 +129,244 @@ export const checkWedding = async (req: Request, res: Response): Promise<void> =
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     ResponseHandler.error(res, 'Wedding not found');
+  }
+};
+
+// Schedule Management
+export const updateSchedule = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      ResponseHandler.unauthorized(res);
+      return;
+    }
+
+    const { schedule } = req.body;
+
+    if (!Array.isArray(schedule)) {
+      ResponseHandler.badRequest(res, 'Schedule must be an array');
+      return;
+    }
+
+    const wedding = await Wedding.findOneAndUpdate(
+      { user: user._id },
+      { $set: { schedule } },
+      { new: true, runValidators: true }
+    );
+
+    if (!wedding) {
+      ResponseHandler.notFound(res, 'Wedding not found');
+      return;
+    }
+
+    ResponseHandler.success(res, {
+      message: 'Schedule updated successfully',
+      schedule: wedding.schedule,
+    });
+  } catch (error) {
+    logger.error('Update schedule error:', error);
+    ResponseHandler.error(res, 'Failed to update schedule');
+  }
+};
+
+export const addScheduleEvent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      ResponseHandler.unauthorized(res);
+      return;
+    }
+
+    const event = req.body;
+
+    const wedding = await Wedding.findOneAndUpdate(
+      { user: user._id },
+      { $push: { schedule: event } },
+      { new: true, runValidators: true }
+    );
+
+    if (!wedding) {
+      ResponseHandler.notFound(res, 'Wedding not found');
+      return;
+    }
+
+    ResponseHandler.created(res, {
+      message: 'Event added successfully',
+      event: wedding.schedule[wedding.schedule.length - 1],
+    });
+  } catch (error) {
+    logger.error('Add schedule event error:', error);
+    ResponseHandler.error(res, 'Failed to add event');
+  }
+};
+
+export const updateScheduleEvent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      ResponseHandler.unauthorized(res);
+      return;
+    }
+
+    const { eventId } = req.params;
+    const eventUpdate = req.body;
+
+    const wedding = await Wedding.findOne({ user: user._id });
+    if (!wedding) {
+      ResponseHandler.notFound(res, 'Wedding not found');
+      return;
+    }
+
+    const eventIndex = wedding.schedule.findIndex((event: any) => 
+      event._id.toString() === eventId
+    );
+
+    if (eventIndex === -1) {
+      ResponseHandler.notFound(res, 'Event not found');
+      return;
+    }
+
+    wedding.schedule[eventIndex] = {
+  ...(wedding.schedule[eventIndex] as any).toObject(),
+  ...eventUpdate,
+};
+
+    await wedding.save();
+
+    ResponseHandler.success(res, {
+      message: 'Event updated successfully',
+      event: wedding.schedule[eventIndex],
+    });
+  } catch (error) {
+    logger.error('Update schedule event error:', error);
+    ResponseHandler.error(res, 'Failed to update event');
+  }
+};
+
+export const deleteScheduleEvent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      ResponseHandler.unauthorized(res);
+      return;
+    }
+
+    const { eventId } = req.params;
+
+    const wedding = await Wedding.findOneAndUpdate(
+      { user: user._id },
+      { $pull: { schedule: { _id: eventId } } },
+      { new: true }
+    );
+
+    if (!wedding) {
+      ResponseHandler.notFound(res, 'Wedding not found');
+      return;
+    }
+
+    ResponseHandler.success(res, {
+      message: 'Event deleted successfully',
+    });
+  } catch (error) {
+    logger.error('Delete schedule event error:', error);
+    ResponseHandler.error(res, 'Failed to delete event');
+  }
+};
+
+// Gallery Management
+export const updateGallery = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      ResponseHandler.unauthorized(res);
+      return;
+    }
+
+    const { gallery } = req.body;
+
+    if (!Array.isArray(gallery)) {
+      ResponseHandler.badRequest(res, 'Gallery must be an array');
+      return;
+    }
+
+    const wedding = await Wedding.findOneAndUpdate(
+      { user: user._id },
+      { $set: { gallery } },
+      { new: true, runValidators: true }
+    );
+
+    if (!wedding) {
+      ResponseHandler.notFound(res, 'Wedding not found');
+      return;
+    }
+
+    ResponseHandler.success(res, {
+      message: 'Gallery updated successfully',
+      gallery: wedding.gallery,
+    });
+  } catch (error) {
+    logger.error('Update gallery error:', error);
+    ResponseHandler.error(res, 'Failed to update gallery');
+  }
+};
+
+export const addGalleryImage = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      ResponseHandler.unauthorized(res);
+      return;
+    }
+
+    const image = req.body;
+
+    const wedding = await Wedding.findOneAndUpdate(
+      { user: user._id },
+      { $push: { gallery: image } },
+      { new: true, runValidators: true }
+    );
+
+    if (!wedding) {
+      ResponseHandler.notFound(res, 'Wedding not found');
+      return;
+    }
+
+    ResponseHandler.created(res, {
+      message: 'Image added successfully',
+      image: wedding.gallery[wedding.gallery.length - 1],
+    });
+  } catch (error) {
+    logger.error('Add gallery image error:', error);
+    ResponseHandler.error(res, 'Failed to add image');
+  }
+};
+
+export const deleteGalleryImage = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      ResponseHandler.unauthorized(res);
+      return;
+    }
+
+    const { imageId } = req.params;
+
+    const wedding = await Wedding.findOneAndUpdate(
+      { user: user._id },
+      { $pull: { gallery: { _id: imageId } } },
+      { new: true }
+    );
+
+    if (!wedding) {
+      ResponseHandler.notFound(res, 'Wedding not found');
+      return;
+    }
+
+    ResponseHandler.success(res, {
+      message: 'Image deleted successfully',
+    });
+  } catch (error) {
+    logger.error('Delete gallery image error:', error);
+    ResponseHandler.error(res, 'Failed to delete image');
   }
 };

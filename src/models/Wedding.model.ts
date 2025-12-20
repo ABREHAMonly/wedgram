@@ -1,6 +1,23 @@
 // backend/src/models/Wedding.model.ts
 import mongoose, { Document, Schema } from 'mongoose';
 
+export interface IScheduleEvent {
+  time: string;
+  event: string;
+  description?: string;
+  location?: string;
+  responsible?: string;
+  status: 'pending' | 'confirmed' | 'completed';
+}
+
+export interface IGalleryImage {
+  url: string;
+  name: string;
+  size: number;
+  uploadedAt: Date;
+  description?: string;
+}
+
 export interface IWedding extends Document {
   user: mongoose.Types.ObjectId;
   title: string;
@@ -11,15 +28,32 @@ export interface IWedding extends Document {
   dressCode?: string;
   themeColor?: string;
   coverImage?: string;
-  gallery?: string[];
-  schedule: Array<{
-    time: Date;
-    event: string;
-    description?: string;
-  }>;
+  gallery: IGalleryImage[];
+  schedule: IScheduleEvent[];
   createdAt: Date;
   updatedAt: Date;
 }
+
+const galleryImageSchema = new Schema<IGalleryImage>({
+  url: { type: String, required: true },
+  name: { type: String, required: true },
+  size: { type: Number, required: true },
+  uploadedAt: { type: Date, default: Date.now },
+  description: { type: String }
+});
+
+const scheduleEventSchema = new Schema<IScheduleEvent>({
+  time: { type: String, required: true },
+  event: { type: String, required: true },
+  description: { type: String },
+  location: { type: String },
+  responsible: { type: String },
+  status: { 
+    type: String, 
+    enum: ['pending', 'confirmed', 'completed'], 
+    default: 'pending' 
+  }
+});
 
 const weddingSchema = new Schema<IWedding>(
   {
@@ -56,14 +90,8 @@ const weddingSchema = new Schema<IWedding>(
     coverImage: { 
       type: String 
     },
-    gallery: [{ 
-      type: String 
-    }],
-    schedule: [{
-      time: Date,
-      event: String,
-      description: String,
-    }],
+    gallery: [galleryImageSchema],
+    schedule: [scheduleEventSchema],
   },
   { 
     timestamps: true 
