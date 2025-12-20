@@ -1,4 +1,3 @@
-// backend/src/types/api/index.ts
 export interface APIResponse<T = unknown> {
   success: boolean;
   message: string;
