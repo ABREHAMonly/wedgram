@@ -1,7 +1,12 @@
 // backend/src/validations/gallery.validation.ts
+// backend/src/validations/gallery.validation.ts
 import Joi from 'joi';
 
 export const galleryImageSchema = Joi.object({
+  _id: Joi.string()
+    .optional()
+    .allow('', null),
+  
   url: Joi.string()
     .pattern(/^(https?|blob):\/\/.+/) // Allow blob URLs for local uploads
     .required(),
@@ -18,12 +23,13 @@ export const galleryImageSchema = Joi.object({
   
   description: Joi.string()
     .max(500)
-    .optional(),
+    .optional()
+    .allow('', null),
   
-  uploadedAt: Joi.date()
-    .default(Date.now),
-
-  // Add these fields
+  uploadedAt: Joi.alternatives()
+    .try(Joi.date(), Joi.string())
+    .default(() => new Date().toISOString()),
+  
   publicId: Joi.string()
     .optional()
     .allow('', null),
@@ -36,7 +42,8 @@ export const galleryImageSchema = Joi.object({
     width: Joi.number(),
     height: Joi.number()
   })
-  .optional(),
+  .optional()
+  .allow(null),
 });
 
 export const updateGallerySchema = Joi.object({

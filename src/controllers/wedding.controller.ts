@@ -319,7 +319,7 @@ export const addGalleryImage = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    console.log('Adding gallery image:', req.body);
+    console.log('Adding/updating gallery image:', req.body);
 
     const image = req.body;
 
@@ -329,14 +329,45 @@ export const addGalleryImage = async (req: Request, res: Response): Promise<void
       return;
     }
 
+    // Find the wedding
     const wedding = await Wedding.findOne({ user: user._id });
     if (!wedding) {
       ResponseHandler.notFound(res, 'Wedding not found');
       return;
     }
 
-    // Add the image to gallery
-    wedding.gallery.push(image);
+    // If image has _id, try to update existing image
+    if (image._id) {
+      const imageIndex = wedding.gallery.findIndex(
+        (img: any) => img._id.toString() === image._id
+      );
+
+      if (imageIndex !== -1) {
+        // Update existing image
+        wedding.gallery[imageIndex] = {
+          ...(wedding.gallery[imageIndex] as any).toObject(),
+          ...image,
+          // Don't overwrite _id
+          _id: wedding.gallery[imageIndex]._id
+        };
+        
+        await wedding.save();
+        
+        const updatedImage = wedding.gallery[imageIndex];
+        
+        ResponseHandler.success(res, {
+          message: 'Image updated successfully',
+          image: updatedImage,
+          _id: updatedImage._id
+        });
+        return;
+      }
+    }
+
+    // If no _id or image not found, add as new image
+    // Remove _id if present to let MongoDB generate it
+    const { _id, ...imageWithoutId } = image;
+    wedding.gallery.push(imageWithoutId as any);
     await wedding.save();
 
     // Get the last added image
@@ -345,11 +376,11 @@ export const addGalleryImage = async (req: Request, res: Response): Promise<void
     ResponseHandler.created(res, {
       message: 'Image added successfully',
       image: addedImage,
-      _id: addedImage._id // Now this should work
+      _id: addedImage._id
     });
   } catch (error) {
-    console.error('Add gallery image error:', error);
-    ResponseHandler.error(res, 'Failed to add image');
+    console.error('Add/update gallery image error:', error);
+    ResponseHandler.error(res, 'Failed to add/update image');
   }
 };
 
