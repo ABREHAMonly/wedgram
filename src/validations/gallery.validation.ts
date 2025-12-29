@@ -3,7 +3,7 @@ import Joi from 'joi';
 
 export const galleryImageSchema = Joi.object({
   url: Joi.string()
-    .uri()
+    .pattern(/^(https?|blob):\/\/.+/) // Allow blob URLs for local uploads
     .required(),
   
   name: Joi.string()

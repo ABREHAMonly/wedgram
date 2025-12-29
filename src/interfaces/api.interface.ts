@@ -1,3 +1,4 @@
+//interfaces/api.interface.ts
 export interface APIResponse<T = unknown> {
   success: boolean;
   message: string;
