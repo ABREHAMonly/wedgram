@@ -3,10 +3,8 @@ import Joi from 'joi';
 
 export const galleryImageSchema = Joi.object({
   url: Joi.string()
-    .required()
-    .messages({
-      'string.empty': 'Image URL is required',
-    }),
+    .pattern(/^(https?|blob):\/\/.+/) // Allow blob URLs for local uploads
+    .required(),
   
   name: Joi.string()
     .min(2)
@@ -24,17 +22,6 @@ export const galleryImageSchema = Joi.object({
   
   uploadedAt: Joi.date()
     .default(Date.now),
-  
-  publicId: Joi.string()
-    .optional(),
-  
-  format: Joi.string()
-    .optional(),
-  
-  dimensions: Joi.object({
-    width: Joi.number(),
-    height: Joi.number()
-  }).optional(),
 });
 
 export const updateGallerySchema = Joi.object({

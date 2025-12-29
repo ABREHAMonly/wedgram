@@ -1,17 +1,16 @@
 // backend/src/services/cloudinary.service.ts
 import { v2 as cloudinary } from 'cloudinary';
 import streamifier from 'streamifier';
-import logger from '../utils/logger';
 
-export class CloudinaryService {
-  async uploadImage(buffer: Buffer, folder: string = 'wedgram'): Promise<{
-    url: string;
-    publicId: string;
-    secureUrl: string;
-    format: string;
-    width: number;
-    height: number;
-  }> {
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
+
+class CloudinaryService {
+  async uploadImage(buffer: Buffer, folder: string = 'wedgram'): Promise<string> {
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
@@ -25,19 +24,9 @@ export class CloudinaryService {
         },
         (error, result) => {
           if (error) {
-            logger.error('Cloudinary upload error:', error);
             reject(error);
-          } else if (result) {
-            resolve({
-              url: result.url,
-              secureUrl: result.secure_url,
-              publicId: result.public_id,
-              format: result.format,
-              width: result.width,
-              height: result.height
-            });
           } else {
-            reject(new Error('Upload failed with no result'));
+            resolve(result?.secure_url || '');
           }
         }
       );
@@ -46,16 +35,7 @@ export class CloudinaryService {
     });
   }
 
-  async uploadMultipleImages(buffers: Buffer[], folder: string = 'wedgram'): Promise<
-    Array<{
-      url: string;
-      publicId: string;
-      secureUrl: string;
-      format: string;
-      width: number;
-      height: number;
-    }>
-  > {
+  async uploadMultipleImages(buffers: Buffer[], folder: string = 'wedgram'): Promise<string[]> {
     const uploadPromises = buffers.map(buffer => this.uploadImage(buffer, folder));
     return Promise.all(uploadPromises);
   }
@@ -63,9 +43,8 @@ export class CloudinaryService {
   async deleteImage(publicId: string): Promise<void> {
     try {
       await cloudinary.uploader.destroy(publicId);
-      logger.info(`Deleted image with publicId: ${publicId}`);
     } catch (error) {
-      logger.error('Error deleting image:', error);
+      console.error('Error deleting image:', error);
       throw error;
     }
   }
@@ -77,4 +56,6 @@ export class CloudinaryService {
   }
 }
 
+// Export both the class and an instance
+export { CloudinaryService };
 export default new CloudinaryService();

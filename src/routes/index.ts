@@ -7,7 +7,7 @@ import adminRoutes from './admin.routes';
 import weddingRoutes from './wedding.routes';
 import notificationRoutes from './notification.routes';
 import scheduleRoutes from './schedule.routes';
-import galleryRoutes from './gallery.routes';
+import galleryRoutes from './gallery.routes'; // This now includes upload
 import giftRoutes from './gift.routes';
 
 const router = Router();
@@ -19,7 +19,7 @@ router.use('/admin', adminRoutes);
 router.use('/wedding', weddingRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/schedule', scheduleRoutes);
-router.use('/gallery', galleryRoutes);
+router.use('/gallery', galleryRoutes); // Upload routes are inside gallery routes
 router.use('/gifts', giftRoutes);
 
 export default router;

@@ -1,152 +1,93 @@
-// backend/src/controllers/upload.controller.ts
+//src\controllers\upload.controller.ts
 import { Request, Response } from 'express';
-import multer from 'multer';
-import cloudinaryService from '../services/cloudinary.service';
+import cloudinaryService from '../services/cloudinary.service'; // Import the instance
 import { ResponseHandler } from '../utils/apiResponse';
 import logger from '../utils/logger';
+import { uploadSingle, uploadMultiple } from '../middleware/upload.middleware';
 
-// Configure multer for memory storage
-const storage = multer.memoryStorage();
-
-const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-  
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed.'));
-  }
-};
-
-export const upload = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
-    files: 10
-  }
-});
-
-export const uploadSingleImage = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const user = req.user;
-    if (!user) {
-      ResponseHandler.unauthorized(res);
-      return;
-    }
-
-    if (!req.file) {
-      ResponseHandler.badRequest(res, 'No image file provided');
-      return;
-    }
-
-    // Get wedding to use ID in folder path
-    const Wedding = require('../models/Wedding.model').default;
-    const wedding = await Wedding.findOne({ user: user._id });
-    
-    const folder = wedding 
-      ? `wedgram/weddings/${wedding._id}/gallery`
-      : `wedgram/users/${user._id}/uploads`;
-
-    // Upload to Cloudinary
-    const result = await cloudinaryService.uploadImage(req.file.buffer, folder);
-
-    ResponseHandler.success(res, {
-      url: result.secureUrl,
-      publicId: result.publicId,
-      name: req.file.originalname,
-      size: req.file.size,
-      format: result.format,
-      dimensions: {
-        width: result.width,
-        height: result.height
+export class UploadController {
+  // Single image upload
+  static uploadImage = async (req: Request, res: Response): Promise<void> => {
+    try {
+      if (!req.file) {
+        ResponseHandler.badRequest(res, 'No file uploaded');
+        return;
       }
-    }, 'Image uploaded successfully');
-  } catch (error: any) {
-    logger.error('Upload image error:', error);
-    ResponseHandler.error(res, error.message || 'Failed to upload image');
-  }
-};
 
-export const uploadMultipleImages = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const user = req.user;
-    if (!user) {
-      ResponseHandler.unauthorized(res);
-      return;
+      const buffer = req.file.buffer;
+      const folder = req.body.folder || 'wedgram';
+      
+      const url = await cloudinaryService.uploadImage(buffer, folder); // Use the instance
+      const publicId = cloudinaryService.extractPublicId(url); // Use the instance
+      
+      ResponseHandler.success(res, {
+        url,
+        name: req.file.originalname,
+        size: req.file.size,
+        publicId,
+        success: true
+      });
+    } catch (error: any) {
+      logger.error('Upload image error:', error);
+      ResponseHandler.error(res, error.message || 'Failed to upload image');
     }
+  };
 
-    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
-      ResponseHandler.badRequest(res, 'No image files provided');
-      return;
-    }
-
-    // Get wedding to use ID in folder path
-    const Wedding = require('../models/Wedding.model').default;
-    const wedding = await Wedding.findOne({ user: user._id });
-    
-    const folder = wedding 
-      ? `wedgram/weddings/${wedding._id}/gallery`
-      : `wedgram/users/${user._id}/uploads`;
-
-    const uploadPromises = (req.files as Express.Multer.File[]).map(async (file) => {
-      try {
-        const result = await cloudinaryService.uploadImage(file.buffer, folder);
-        return {
-          url: result.secureUrl,
-          publicId: result.publicId,
-          name: file.originalname,
-          size: file.size,
-          format: result.format,
-          dimensions: {
-            width: result.width,
-            height: result.height
-          },
-          success: true
-        };
-      } catch (error) {
-        return {
-          name: file.originalname,
-          success: false,
-          error: error instanceof Error ? error.message : 'Upload failed'
-        };
+  // Multiple images upload
+  static uploadMultipleImages = async (req: Request, res: Response): Promise<void> => {
+    try {
+      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+        ResponseHandler.badRequest(res, 'No files uploaded');
+        return;
       }
-    });
 
-    const results = await Promise.all(uploadPromises);
+      const files = req.files as Express.Multer.File[];
+      const folder = req.body.folder || 'wedgram';
+      
+      const buffers = files.map(file => file.buffer);
+      const urls = await cloudinaryService.uploadMultipleImages(buffers, folder); // Use the instance
 
-    ResponseHandler.success(res, {
-      total: results.length,
-      successful: results.filter(r => r.success).length,
-      failed: results.filter(r => !r.success).length,
-      results
-    }, 'Images uploaded successfully');
-  } catch (error: any) {
-    logger.error('Upload multiple images error:', error);
-    ResponseHandler.error(res, error.message || 'Failed to upload images');
-  }
-};
+      const results = urls.map((url, index) => ({
+        url,
+        name: files[index].originalname,
+        size: files[index].size,
+        publicId: cloudinaryService.extractPublicId(url), // Use the instance
+        success: true
+      }));
 
-export const deleteImage = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const user = req.user;
-    if (!user) {
-      ResponseHandler.unauthorized(res);
-      return;
+      ResponseHandler.success(res, {
+        results,
+        total: files.length,
+        successful: results.length,
+        failed: 0
+      });
+    } catch (error: any) {
+      logger.error('Upload multiple images error:', error);
+      ResponseHandler.error(res, error.message || 'Failed to upload images');
     }
+  };
 
-    const { publicId } = req.params;
-    
-    if (!publicId) {
-      ResponseHandler.badRequest(res, 'Public ID is required');
-      return;
+  // Delete image from Cloudinary
+  static deleteImage = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { publicId } = req.params;
+      
+      if (!publicId) {
+        ResponseHandler.badRequest(res, 'Public ID is required');
+        return;
+      }
+
+      await cloudinaryService.deleteImage(publicId); // Use the instance
+      
+      ResponseHandler.success(res, {
+        message: 'Image deleted successfully'
+      });
+    } catch (error: any) {
+      logger.error('Delete image error:', error);
+      ResponseHandler.error(res, error.message || 'Failed to delete image');
     }
+  };
+}
 
-    await cloudinaryService.deleteImage(publicId);
-
-    ResponseHandler.success(res, null, 'Image deleted successfully');
-  } catch (error: any) {
-    logger.error('Delete image error:', error);
-    ResponseHandler.error(res, error.message || 'Failed to delete image');
-  }
-};
+// Export middleware functions
+export { uploadSingle, uploadMultiple };

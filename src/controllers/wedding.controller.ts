@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import Wedding from '../models/Wedding.model';
 import { ResponseHandler } from '../utils/apiResponse';
 import logger from '../utils/logger';
+import cloudinaryService from '../services/cloudinary.service';
 
 export const createWedding = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -351,13 +352,31 @@ export const deleteGalleryImage = async (req: Request, res: Response): Promise<v
 
     const { imageId } = req.params;
 
-    const wedding = await Wedding.findOneAndUpdate(
+    // First find the wedding and get the image details
+    const wedding = await Wedding.findOne({ user: user._id });
+    if (!wedding) {
+      ResponseHandler.notFound(res, 'Wedding not found');
+      return;
+    }
+
+    // Find the image to delete
+    const imageToDelete = wedding.gallery.find(
+      (img: any) => img._id.toString() === imageId
+    );
+
+    // Delete from Cloudinary if publicId exists
+    if (imageToDelete?.publicId) {
+      await cloudinaryService.deleteImage(imageToDelete.publicId);
+    }
+
+    // Remove from database
+    const updatedWedding = await Wedding.findOneAndUpdate(
       { user: user._id },
       { $pull: { gallery: { _id: imageId } } },
       { new: true }
     );
 
-    if (!wedding) {
+    if (!updatedWedding) {
       ResponseHandler.notFound(res, 'Wedding not found');
       return;
     }

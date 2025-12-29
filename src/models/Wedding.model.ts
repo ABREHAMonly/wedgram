@@ -16,6 +16,12 @@ export interface IGalleryImage {
   size: number;
   uploadedAt: Date;
   description?: string;
+  publicId?: string; // Add this line
+  format?: string; // Add this line
+  dimensions?: { // Add this line
+    width: number;
+    height: number;
+  };
 }
 
 export interface IWedding extends Document {
@@ -39,7 +45,13 @@ const galleryImageSchema = new Schema<IGalleryImage>({
   name: { type: String, required: true },
   size: { type: Number, required: true },
   uploadedAt: { type: Date, default: Date.now },
-  description: { type: String }
+  description: { type: String },
+  publicId: { type: String }, // Add this
+  format: { type: String }, // Add this
+  dimensions: { // Add this
+    width: { type: Number },
+    height: { type: Number }
+  }
 });
 
 const scheduleEventSchema = new Schema<IScheduleEvent>({
