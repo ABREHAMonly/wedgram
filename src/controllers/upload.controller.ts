@@ -34,38 +34,61 @@ export class UploadController {
   };
 
   // Multiple images upload
-  static uploadMultipleImages = async (req: Request, res: Response): Promise<void> => {
-    try {
-      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
-        ResponseHandler.badRequest(res, 'No files uploaded');
-        return;
-      }
+ // Multiple images upload
+static uploadMultipleImages = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Debug: Log request details
+    console.log('Upload request received:', {
+      headers: req.headers,
+      body: req.body,
+      files: req.files,
+      fileCount: req.files ? (Array.isArray(req.files) ? req.files.length : 'not array') : 'no files'
+    });
 
-      const files = req.files as Express.Multer.File[];
-      const folder = req.body.folder || 'wedgram';
+    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+      console.log('No files found in request. Checking FormData...');
+      console.log('Request content-type:', req.headers['content-type']);
       
-      const buffers = files.map(file => file.buffer);
-      const urls = await cloudinaryService.uploadMultipleImages(buffers, folder); // Use the instance
-
-      const results = urls.map((url, index) => ({
-        url,
-        name: files[index].originalname,
-        size: files[index].size,
-        publicId: cloudinaryService.extractPublicId(url), // Use the instance
-        success: true
-      }));
-
-      ResponseHandler.success(res, {
-        results,
-        total: files.length,
-        successful: results.length,
-        failed: 0
-      });
-    } catch (error: any) {
-      logger.error('Upload multiple images error:', error);
-      ResponseHandler.error(res, error.message || 'Failed to upload images');
+      // Check if multer processed the files
+      if (req.file) {
+        console.log('Found single file:', req.file);
+      }
+      
+      ResponseHandler.badRequest(res, 'No files uploaded');
+      return;
     }
-  };
+
+    const files = req.files as Express.Multer.File[];
+    console.log('Files received:', files.map(f => ({
+      originalname: f.originalname,
+      size: f.size,
+      mimetype: f.mimetype
+    })));
+
+    const folder = req.body.folder || 'wedgram';
+    
+    const buffers = files.map(file => file.buffer);
+    const urls = await cloudinaryService.uploadMultipleImages(buffers, folder);
+
+    const results = urls.map((url, index) => ({
+      url,
+      name: files[index].originalname,
+      size: files[index].size,
+      publicId: cloudinaryService.extractPublicId(url),
+      success: true
+    }));
+
+    ResponseHandler.success(res, {
+      results,
+      total: files.length,
+      successful: results.length,
+      failed: 0
+    });
+  } catch (error: any) {
+    console.error('Upload multiple images error:', error);
+    ResponseHandler.error(res, error.message || 'Failed to upload images');
+  }
+};
 
   // Delete image from Cloudinary
   static deleteImage = async (req: Request, res: Response): Promise<void> => {
