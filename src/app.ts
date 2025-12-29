@@ -30,13 +30,26 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'https://wedgram.onrender.com',
-    'https://your-frontend-domain.vercel.app', // Add your Vercel domain when deployed
+    'https://your-frontend-domain.vercel.app',
+    'http://localhost:3001', // Add if needed
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
   exposedHeaders: ['Content-Length', 'X-Request-Id'],
+  maxAge: 86400, // 24 hours
 }));
+
+app.use((req, res, next) => {
+  console.log('Request:', {
+    method: req.method,
+    url: req.url,
+    headers: req.headers,
+    body: req.body,
+    files: (req as any).files,
+  });
+  next();
+});
 
 // Body parsers
 app.use(express.json({ limit: '10mb' }));

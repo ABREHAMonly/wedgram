@@ -22,6 +22,21 @@ export const galleryImageSchema = Joi.object({
   
   uploadedAt: Joi.date()
     .default(Date.now),
+
+  // Add these fields
+  publicId: Joi.string()
+    .optional()
+    .allow('', null),
+  
+  format: Joi.string()
+    .optional()
+    .allow('', null),
+  
+  dimensions: Joi.object({
+    width: Joi.number(),
+    height: Joi.number()
+  })
+  .optional(),
 });
 
 export const updateGallerySchema = Joi.object({

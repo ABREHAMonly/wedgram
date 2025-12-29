@@ -319,25 +319,36 @@ export const addGalleryImage = async (req: Request, res: Response): Promise<void
       return;
     }
 
+    console.log('Adding gallery image:', req.body);
+
     const image = req.body;
 
-    const wedding = await Wedding.findOneAndUpdate(
-      { user: user._id },
-      { $push: { gallery: image } },
-      { new: true, runValidators: true }
-    );
+    // Basic validation
+    if (!image.url || !image.name) {
+      ResponseHandler.badRequest(res, 'Image URL and name are required');
+      return;
+    }
 
+    const wedding = await Wedding.findOne({ user: user._id });
     if (!wedding) {
       ResponseHandler.notFound(res, 'Wedding not found');
       return;
     }
 
+    // Add the image to gallery
+    wedding.gallery.push(image);
+    await wedding.save();
+
+    // Get the last added image
+    const addedImage = wedding.gallery[wedding.gallery.length - 1];
+    
     ResponseHandler.created(res, {
       message: 'Image added successfully',
-      image: wedding.gallery[wedding.gallery.length - 1],
+      image: addedImage,
+      _id: addedImage._id // Now this should work
     });
   } catch (error) {
-    logger.error('Add gallery image error:', error);
+    console.error('Add gallery image error:', error);
     ResponseHandler.error(res, 'Failed to add image');
   }
 };

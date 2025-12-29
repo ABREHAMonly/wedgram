@@ -1,7 +1,8 @@
 // backend/src/models/Wedding.model.ts
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface IScheduleEvent {
+  _id?: Types.ObjectId;
   time: string;
   event: string;
   description?: string;
@@ -11,21 +12,22 @@ export interface IScheduleEvent {
 }
 
 export interface IGalleryImage {
+  _id?: Types.ObjectId;
   url: string;
   name: string;
   size: number;
   uploadedAt: Date;
   description?: string;
-  publicId?: string; // Add this line
-  format?: string; // Add this line
-  dimensions?: { // Add this line
+  publicId?: string;
+  format?: string;
+  dimensions?: {
     width: number;
     height: number;
   };
 }
 
 export interface IWedding extends Document {
-  user: mongoose.Types.ObjectId;
+  user: Types.ObjectId;
   title: string;
   description?: string;
   date: Date;
@@ -46,13 +48,13 @@ const galleryImageSchema = new Schema<IGalleryImage>({
   size: { type: Number, required: true },
   uploadedAt: { type: Date, default: Date.now },
   description: { type: String },
-  publicId: { type: String }, // Add this
-  format: { type: String }, // Add this
-  dimensions: { // Add this
+  publicId: { type: String },
+  format: { type: String },
+  dimensions: {
     width: { type: Number },
     height: { type: Number }
   }
-});
+}, { _id: true }); // Enable _id for subdocuments
 
 const scheduleEventSchema = new Schema<IScheduleEvent>({
   time: { type: String, required: true },
@@ -65,7 +67,7 @@ const scheduleEventSchema = new Schema<IScheduleEvent>({
     enum: ['pending', 'confirmed', 'completed'], 
     default: 'pending' 
   }
-});
+}, { _id: true }); // Enable _id for subdocuments
 
 const weddingSchema = new Schema<IWedding>(
   {
