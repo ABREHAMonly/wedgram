@@ -4,6 +4,8 @@ import Wedding from '../models/Wedding.model';
 import { ResponseHandler } from '../utils/apiResponse';
 import logger from '../utils/logger';
 import cloudinaryService from '../services/cloudinary.service';
+import Guest from '../models/Guest.model'; // Add this line
+
 
 export const createWedding = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -481,5 +483,45 @@ export const getGallery = async (req: Request, res: Response): Promise<void> => 
   } catch (error) {
     logger.error('Get gallery error:', error);
     ResponseHandler.error(res, 'Failed to fetch gallery');
+  }
+};
+
+export const getWeddingByGuestToken = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { token } = req.params;
+
+    // Find guest by invitation token
+    const guest = await Guest.findOne({ invitationToken: token });
+    if (!guest) {
+      ResponseHandler.notFound(res, 'Invitation not found');
+      return;
+    }
+
+    // Find wedding by the inviter (user)
+    const wedding = await Wedding.findOne({ user: guest.inviter })
+      .select('title description date venue venueAddress themeColor coverImage gallery schedule');
+    
+    if (!wedding) {
+      ResponseHandler.notFound(res, 'Wedding not found');
+      return;
+    }
+
+    ResponseHandler.success(res, {
+      wedding: {
+        id: wedding._id,
+        title: wedding.title,
+        description: wedding.description,
+        date: wedding.date,
+        venue: wedding.venue,
+        venueAddress: wedding.venueAddress,
+        themeColor: wedding.themeColor,
+        coverImage: wedding.coverImage,
+      },
+      gallery: wedding.gallery || [],
+      schedule: wedding.schedule || [],
+    });
+  } catch (error) {
+    logger.error('Get wedding by token error:', error);
+    ResponseHandler.error(res, 'Failed to fetch wedding details');
   }
 };
