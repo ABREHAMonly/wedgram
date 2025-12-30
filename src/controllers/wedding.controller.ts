@@ -336,33 +336,43 @@ export const addGalleryImage = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    // If image has _id, try to update existing image
     if (image._id) {
-      const imageIndex = wedding.gallery.findIndex(
-        (img: any) => img._id.toString() === image._id
-      );
+  const imageIndex = wedding.gallery.findIndex(
+    (img: any) => img._id.toString() === image._id
+  );
 
-      if (imageIndex !== -1) {
-        // Update existing image
-        wedding.gallery[imageIndex] = {
-          ...(wedding.gallery[imageIndex] as any).toObject(),
-          ...image,
-          // Don't overwrite _id
-          _id: wedding.gallery[imageIndex]._id
-        };
-        
-        await wedding.save();
-        
-        const updatedImage = wedding.gallery[imageIndex];
-        
-        ResponseHandler.success(res, {
-          message: 'Image updated successfully',
-          image: updatedImage,
-          _id: updatedImage._id
-        });
-        return;
-      }
+  if (imageIndex !== -1) {
+    // Only update if something actually changed
+    const currentImage = wedding.gallery[imageIndex] as any;
+    const hasChanges = Object.keys(image).some(key => {
+      if (key === '_id') return false;
+      if (key === 'uploadedAt') return false;
+      return currentImage[key] !== image[key];
+    });
+
+    if (hasChanges) {
+      wedding.gallery[imageIndex] = {
+        ...currentImage.toObject(),
+        ...image,
+        updatedAt: new Date(),
+        // Don't overwrite _id
+        _id: wedding.gallery[imageIndex]._id
+      };
+      
+      await wedding.save();
     }
+    
+    const updatedImage = wedding.gallery[imageIndex];
+    
+    ResponseHandler.success(res, {
+      message: hasChanges ? 'Image updated successfully' : 'No changes detected',
+      image: updatedImage,
+      _id: updatedImage._id,
+      updated: hasChanges
+    });
+    return;
+  }
+}
 
     // If no _id or image not found, add as new image
     // Remove _id if present to let MongoDB generate it
