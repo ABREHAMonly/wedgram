@@ -13,7 +13,7 @@ import mongoose from 'mongoose';
 
 const app = express();
 
-// Trust proxy for Render/Heroku/Vercel
+// Trust proxy
 app.set('trust proxy', 1);
 
 // Connect to database
@@ -25,28 +25,22 @@ connectDB().catch((err) => {
 // Configure Cloudinary
 configureCloudinary();
 
-// Define allowed origins
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://wedgram.onrender.com',
-  'https://wedgram-frontend.vercel.app', // Updated Vercel domain
-  'http://localhost:3001',
-];
-
-// CORS configuration function
-const corsOptions: cors.CorsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) {
-      return callback(null, true);
-    }
+// Simple CORS configuration - works for most cases
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://wedgram.onrender.com',
+      'http://localhost:3001',
+    ];
     
-    // Check if the origin is in the allowed list or if it's a development environment
+    // Allow requests with no origin (like mobile apps, curl, postman)
+    if (!origin) return callback(null, true);
+    
     if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
-      return callback(null, true);
+      callback(null, true);
     } else {
-      logger.warn(`CORS blocked for origin: ${origin}`);
-      return callback(new Error('Not allowed by CORS'), false);
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
@@ -57,48 +51,23 @@ const corsOptions: cors.CorsOptions = {
     'Accept',
     'X-Requested-With',
     'Cache-Control',
-    'Origin',
-    'X-Request-Id',
-    'Access-Control-Allow-Headers'
+    'Origin'
   ],
   exposedHeaders: [
     'Content-Length',
-    'X-Request-Id',
-    'Content-Range',
-    'X-Total-Count'
+    'X-Request-Id'
   ],
-  maxAge: 86400, // 24 hours
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+  maxAge: 86400
 };
 
 // Security middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  // Disable specific helmet features that might interfere with API
-  contentSecurityPolicy: false,
-}));
+app.use(helmet());
 
-// Apply CORS middleware
+// Apply CORS
 app.use(cors(corsOptions));
 
-// Handle OPTIONS requests for all routes (preflight)
-app.options('*', (req, res) => {
-  const origin = req.headers.origin;
-  
-  if (origin && allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else if (process.env.NODE_ENV !== 'production') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Cache-Control, Origin, X-Request-Id');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Max-Age', '86400');
-  
-  res.status(204).send();
-});
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
 
 // Body parsers
 app.use(express.json({ limit: '10mb' }));
@@ -110,9 +79,12 @@ app.use(globalRateLimiter);
 
 // Request logging
 app.use((req, res, next) => {
-  // Don't log in test environment
   if (process.env.NODE_ENV !== 'test') {
-    logger.info(`${req.method} ${req.url} - ${req.ip}`);
+    const start = Date.now();
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      logger.info(`${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
+    });
   }
   next();
 });
@@ -146,7 +118,7 @@ app.get('/', (req, res) => {
 // API Routes
 app.use('/api/v1', routes);
 
-// Test endpoints (keep these at the end to not interfere with routes)
+// Test endpoints
 app.get('/api/test', (req, res) => {
   res.json({
     status: 'ok',
