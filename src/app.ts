@@ -26,50 +26,19 @@ configureCloudinary();
 
 // Security middleware
 app.use(helmet());
-// Replace your current CORS configuration with this:
 app.use(cors({
-  origin: (origin, callback) => {
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'https://wedgram.onrender.com',
-      'http://localhost:3001',
-    ];
-    
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
-      return callback(null, true);
-    } else {
-      return callback(new Error('Not allowed by CORS'), false);
-    }
-  },
+  origin: [
+    'http://localhost:3000',
+    'https://wedgram.onrender.com',
+    'https://your-frontend-domain.vercel.app',
+    'http://localhost:3001', // Add if needed
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'Accept',
-    'X-Requested-With',
-    'Cache-Control',
-    'Origin',
-    'Access-Control-Allow-Headers', // Add this
-    'X-Requested-With'
-  ],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
   exposedHeaders: ['Content-Length', 'X-Request-Id'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+  maxAge: 86400, // 24 hours
 }));
-
-// Add this handler for OPTIONS requests
-app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Cache-Control, Origin, X-Request-Id');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Max-Age', '86400');
-  res.status(200).send();
-});
 
 app.use((req, res, next) => {
   console.log('Request:', {
