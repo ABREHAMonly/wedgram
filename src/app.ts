@@ -12,8 +12,9 @@ import logger from './utils/logger';
 import mongoose from 'mongoose';
 
 const app = express();
-// Trust proxy (IMPORTANT for Render/Heroku/Vercel)
-app.set('trust proxy', 1); // Add this line
+
+// Trust proxy for Render/Heroku/Vercel
+app.set('trust proxy', 1);
 
 // Connect to database
 connectDB().catch((err) => {
@@ -24,32 +25,68 @@ connectDB().catch((err) => {
 // Configure Cloudinary
 configureCloudinary();
 
-// Security middleware
-app.use(helmet());
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://wedgram.onrender.com',
-    'https://your-frontend-domain.vercel.app',
-    'http://localhost:3001', // Add if needed
-  ],
+// Enhanced CORS configuration
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://wedgram.onrender.com',
+  'https://your-frontend-domain.vercel.app',
+  'http://localhost:3001',
+];
+
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      logger.warn(`CORS blocked for origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
-  exposedHeaders: ['Content-Length', 'X-Request-Id'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'Accept',
+    'X-Requested-With',
+    'Cache-Control', // ADDED: Allow Cache-Control header
+    'Origin',
+    'X-Requested-With',
+    'X-Request-Id',
+  ],
+  exposedHeaders: [
+    'Content-Length',
+    'X-Request-Id',
+    'Content-Range',
+    'X-Total-Count',
+  ],
   maxAge: 86400, // 24 hours
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+};
+
+// Security middleware with CORS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+    },
+  },
 }));
 
-app.use((req, res, next) => {
-  console.log('Request:', {
-    method: req.method,
-    url: req.url,
-    headers: req.headers,
-    body: req.body,
-    files: (req as any).files,
-  });
-  next();
-});
+// Apply CORS
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 // Body parsers
 app.use(express.json({ limit: '10mb' }));
@@ -59,14 +96,20 @@ app.use(cookieParser());
 // Rate limiting
 app.use(globalRateLimiter);
 
-// Request logging
+// Request logging middleware (simplified)
 app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.url} - ${req.ip}`);
+  const start = Date.now();
+  
+  // Log after response finishes
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info(`${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`);
+  });
+  
   next();
 });
 
-
-
+// Test endpoints
 app.get('/api/test', (req, res) => {
   res.json({
     status: 'ok',
@@ -92,13 +135,15 @@ app.get('/api/test-wedding', async (req, res) => {
   }
 });
 
-// Health check - THIS SHOULD BE /health (not /api/v1/health)
+// Health check
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'WedGram Backend',
     version: '1.0.0',
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
   });
 });
 
