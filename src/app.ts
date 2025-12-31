@@ -25,24 +25,28 @@ connectDB().catch((err) => {
 // Configure Cloudinary
 configureCloudinary();
 
-// Enhanced CORS configuration
+// Define allowed origins
 const allowedOrigins = [
   'http://localhost:3000',
   'https://wedgram.onrender.com',
-  'https://your-frontend-domain.vercel.app',
+  'https://wedgram-frontend.vercel.app', // Updated Vercel domain
   'http://localhost:3001',
 ];
 
-const corsOptions = {
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+// CORS configuration function
+const corsOptions: cors.CorsOptions = {
+  origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      return callback(null, true);
+    }
     
-    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
-      callback(null, true);
+    // Check if the origin is in the allowed list or if it's a development environment
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
     } else {
       logger.warn(`CORS blocked for origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      return callback(new Error('Not allowed by CORS'), false);
     }
   },
   credentials: true,
@@ -52,41 +56,49 @@ const corsOptions = {
     'Authorization',
     'Accept',
     'X-Requested-With',
-    'Cache-Control', // ADDED: Allow Cache-Control header
+    'Cache-Control',
     'Origin',
-    'X-Requested-With',
     'X-Request-Id',
+    'Access-Control-Allow-Headers'
   ],
   exposedHeaders: [
     'Content-Length',
     'X-Request-Id',
     'Content-Range',
-    'X-Total-Count',
+    'X-Total-Count'
   ],
   maxAge: 86400, // 24 hours
   preflightContinue: false,
-  optionsSuccessStatus: 204,
+  optionsSuccessStatus: 204
 };
 
-// Security middleware with CORS
+// Security middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
-  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
-    },
-  },
+  // Disable specific helmet features that might interfere with API
+  contentSecurityPolicy: false,
 }));
 
-// Apply CORS
+// Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Handle preflight requests
-app.options('*', cors(corsOptions));
+// Handle OPTIONS requests for all routes (preflight)
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (process.env.NODE_ENV !== 'production') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Cache-Control, Origin, X-Request-Id');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  
+  res.status(204).send();
+});
 
 // Body parsers
 app.use(express.json({ limit: '10mb' }));
@@ -96,20 +108,45 @@ app.use(cookieParser());
 // Rate limiting
 app.use(globalRateLimiter);
 
-// Request logging middleware (simplified)
+// Request logging
 app.use((req, res, next) => {
-  const start = Date.now();
-  
-  // Log after response finishes
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    logger.info(`${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`);
-  });
-  
+  // Don't log in test environment
+  if (process.env.NODE_ENV !== 'test') {
+    logger.info(`${req.method} ${req.url} - ${req.ip}`);
+  }
   next();
 });
 
-// Test endpoints
+// Health check
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'WedGram Backend',
+    version: '1.0.0',
+  });
+});
+
+// Root route
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'Welcome to WedGram API',
+    version: '1.0.0',
+    documentation: 'https://github.com/ABREHAMonly/wedgram',
+    endpoints: {
+      auth: '/api/v1/auth',
+      invites: '/api/v1/invites',
+      rsvp: '/api/v1/rsvp',
+      admin: '/api/v1/admin'
+    },
+    health: '/health'
+  });
+});
+
+// API Routes
+app.use('/api/v1', routes);
+
+// Test endpoints (keep these at the end to not interfere with routes)
 app.get('/api/test', (req, res) => {
   res.json({
     status: 'ok',
@@ -134,37 +171,6 @@ app.get('/api/test-wedding', async (req, res) => {
     });
   }
 });
-
-// Health check
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    service: 'WedGram Backend',
-    version: '1.0.0',
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-  });
-});
-
-// Root route
-app.get('/', (req, res) => {
-  res.status(200).json({
-    message: 'Welcome to WedGram API',
-    version: '1.0.0',
-    documentation: 'https://github.com/ABREHAMonly/wedgram',
-    endpoints: {
-      auth: '/api/v1/auth',
-      invites: '/api/v1/invites',
-      rsvp: '/api/v1/rsvp',
-      admin: '/api/v1/admin'
-    },
-    health: '/health'
-  });
-});
-
-// API Routes
-app.use('/api/v1', routes);
 
 // 404 handler
 app.use(notFoundHandler);
